@@ -1,0 +1,48 @@
+.product-create-page {
+  min-height: 100vh;
+  background-color: #FFFFFF;
+}
+
+.page-header {
+  background: #FFFFFF;
+  border-bottom: 1px solid #E0E0E0;
+  padding: 24px 32px;
+}
+
+.header-content {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.page-header h1 {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  color: #1A1A1A;
+}
+
+.page-main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.error-banner {
+  padding: 12px 16px;
+  background: #FFEBEE;
+  border: 1px solid #E53935;
+  border-radius: 8px;
+  color: #E53935;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    padding: 16px 24px;
+  }
+
+  .page-main {
+    padding: 24px 16px;
+  }
+}
+
