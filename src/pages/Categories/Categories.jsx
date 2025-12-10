@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCategories } from '../../hooks/useCategories';
 import { useProducts } from '../../hooks/useProducts';
-import Layout from '../../components/Layout/Layout';
+import Layout from '../../components/layout/Layout';
 import { theme } from '../../styles/theme';
 import './Categories.css';
 

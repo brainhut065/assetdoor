@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProducts } from '../../hooks/useProducts';
 import { getProduct } from '../../services/firebase/firestore';
-import Layout from '../../components/Layout/Layout';
+import Layout from '../../components/layout/Layout';
 import ProductForm from './ProductForm';
 import './ProductCreate.css';
 

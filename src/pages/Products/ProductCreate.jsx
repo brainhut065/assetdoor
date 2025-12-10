@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts } from '../../hooks/useProducts';
-import Layout from '../../components/Layout/Layout';
+import Layout from '../../components/layout/Layout';
 import ProductForm from './ProductForm';
 import './ProductCreate.css';
 

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useProducts } from '../../hooks/useProducts';
 import { useCategories } from '../../hooks/useCategories';
 import { useIapProducts } from '../../hooks/useIapProducts';
-import Layout from '../../components/Layout/Layout';
+import Layout from '../../components/layout/Layout';
 import { theme } from '../../styles/theme';
 import './ProductList.css';
 

@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePurchases } from '../../hooks/usePurchases';
 import { useIapProducts } from '../../hooks/useIapProducts';
-import Layout from '../../components/Layout/Layout';
+import Layout from '../../components/layout/Layout';
 import { formatPrice, formatDate } from '../../utils/formatters';
 import './PurchaseList.css';
 

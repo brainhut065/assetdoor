@@ -5,7 +5,7 @@ import { getDashboardStats } from '../../services/firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { useIapProducts } from '../../hooks/useIapProducts';
 import { usePurchases } from '../../hooks/usePurchases';
-import Layout from '../../components/Layout/Layout';
+import Layout from '../../components/layout/Layout';
 import { formatPrice } from '../../utils/formatters';
 import { theme } from '../../styles/theme';
 import './Dashboard.css';

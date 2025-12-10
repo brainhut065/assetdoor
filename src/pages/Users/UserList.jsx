@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUsers } from '../../hooks/useUsers';
 import { usePurchases } from '../../hooks/usePurchases';
 import { useIapProducts } from '../../hooks/useIapProducts';
-import Layout from '../../components/Layout/Layout';
+import Layout from '../../components/layout/Layout';
 import { formatPrice, formatDate } from '../../utils/formatters';
 import './UserList.css';
 
