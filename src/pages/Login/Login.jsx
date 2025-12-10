@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { theme } from '../../styles/theme';
+import { toast } from 'react-toastify';
 import './Login.css';
 
 const Login = () => {
@@ -28,6 +29,22 @@ const Login = () => {
     setLoading(true);
 
     try {
+      // Validate inputs before attempting login
+      if (!email.trim() || !password.trim()) {
+        const errorMessage = 'Please enter both email and password.';
+        setError(errorMessage);
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        setLoading(false);
+        return;
+      }
+
       await login(email, password);
       // Navigation will happen automatically via useEffect when user is set
       // But add a small delay to ensure state is updated
@@ -37,7 +54,27 @@ const Login = () => {
         }
       }, 100);
     } catch (err) {
-      setError(err.message || 'Failed to login. Please check your credentials.');
+      // Extract error message from various error formats
+      let errorMessage = 'Failed to login. Please check your credentials.';
+      
+      if (err?.message) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err?.toString) {
+        errorMessage = err.toString();
+      }
+      
+      setError(errorMessage);
+      // Show toast notification for better visibility
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       setLoading(false);
     }
   };
