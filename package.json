@@ -9,6 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "engines": {
+    "node": "24"
+  },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@mui/icons-material": "^7.3.5",
