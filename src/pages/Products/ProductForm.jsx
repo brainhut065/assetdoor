@@ -19,7 +19,6 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
     title: '',
     description: '',
     category: '',
-    price: '',
     isActive: true,
     isFeatured: false,
     tags: '',
@@ -40,7 +39,6 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
         title: product.title || '',
         description: product.description || '',
         category: product.category || '',
-        price: product.price || '',
         isActive: product.isActive !== false,
         isFeatured: product.isFeatured || false,
         tags: product.tags ? product.tags.join(', ') : '',
@@ -201,15 +199,6 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
       newErrors.category = 'Category is required';
     }
 
-    if (!formData.price) {
-      newErrors.price = 'Price is required';
-    } else {
-      const priceNum = parseFloat(formData.price);
-      if (isNaN(priceNum) || priceNum <= 0) {
-        newErrors.price = 'Price must be greater than 0';
-      }
-    }
-
     if (!imageData && !product?.imageUrl) {
       newErrors.image = 'Product image is required';
     }
@@ -243,17 +232,24 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
       return;
     }
 
-    const priceNum = parseFloat(formData.price);
     const tagsArray = formData.tags
       ? formData.tags.split(',').map(t => t.trim()).filter(t => t)
       : [];
+
+    // Determine price based on IAP or free status
+    // If IAP is linked, price comes from IAP (set to 0 as placeholder)
+    // If free, price is 0
+    // Price field is kept for backward compatibility but not used for display
+    const hasIap = formData.iapProductIdAndroid || formData.iapProductIdIOS;
+    const finalPrice = formData.isFree || !hasIap ? 0 : 0; // Always 0, price comes from IAP
+    const finalPriceFormatted = formData.isFree ? 'FREE' : (hasIap ? '$0.00' : 'FREE');
 
     const productData = {
       title: formData.title.trim(),
       description: formData.description.trim(),
       category: formData.category,
-      price: priceNum,
-      priceFormatted: `$${priceNum.toFixed(2)}`,
+      price: finalPrice, // Kept for backward compatibility, not used for display
+      priceFormatted: finalPriceFormatted, // Kept for backward compatibility, not used for display
       isActive: formData.isActive,
       isFeatured: formData.isFeatured,
       tags: tagsArray,
@@ -311,7 +307,7 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
         </div>
       </div>
 
-      <div className="form-row form-row-2">
+      <div className="form-row">
         <div className="form-group">
           <label htmlFor="category">Category *</label>
           <select
@@ -330,23 +326,6 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
             ))}
           </select>
           {errors.category && <span className="error-message">{errors.category}</span>}
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="price">Price ($) *</label>
-          <input
-            type="number"
-            id="price"
-            name="price"
-            value={formData.price}
-            onChange={handleChange}
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            disabled={loading}
-            className={errors.price ? 'error' : ''}
-          />
-          {errors.price && <span className="error-message">{errors.price}</span>}
         </div>
       </div>
 

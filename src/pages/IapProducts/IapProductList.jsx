@@ -15,7 +15,7 @@ const IapProductList = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [linkedFilter, setLinkedFilter] = useState('All');
   const [syncing, setSyncing] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
   
   const { iapProducts, loading, error, hasMore, loadMore, syncStatus, refetch, triggerManualSync } = useIapProducts({
     platform: platformFilter,

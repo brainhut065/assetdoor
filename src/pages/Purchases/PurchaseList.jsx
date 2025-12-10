@@ -14,7 +14,7 @@ const PurchaseList = () => {
     endDate: '',
   });
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCurrency, setSelectedCurrency] = useState('USD'); // Default to USD
+  const [selectedCurrency, setSelectedCurrency] = useState('INR'); // Default to INR
   
   const { purchases, loading, error, hasMore, loadMore } = usePurchases(filters);
   const loadMoreButtonRef = useRef(null);
@@ -335,6 +335,7 @@ const PurchaseList = () => {
                   <th>Date</th>
                   <th>User</th>
                   <th>Product</th>
+                  <th>Licensee Name</th>
                   <th>Price</th>
                   <th>Platform</th>
                   <th>Status</th>
@@ -358,6 +359,19 @@ const PurchaseList = () => {
                         )}
                         <span>{purchase.productTitle || 'N/A'}</span>
                       </div>
+                    </td>
+                    <td className="licensee-cell">
+                      {purchase.licenseeName ? (
+                        <span style={{ 
+                          fontWeight: 600, 
+                          color: '#FFA500',
+                          fontSize: '14px'
+                        }}>
+                          {purchase.licenseeName}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#999', fontStyle: 'italic' }}>N/A</span>
+                      )}
                     </td>
                     <td className="price-cell">
                       {getPurchasePrice(purchase)}

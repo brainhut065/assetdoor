@@ -13,7 +13,7 @@ const PurchaseDetail = () => {
   const [purchase, setPurchase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
   
   const { iapProducts } = useIapProducts({ platform: 'All' });
   
@@ -249,6 +249,18 @@ const PurchaseDetail = () => {
                     <strong>Purchase Date:</strong>
                     <span>{formatDate(purchase.purchaseDate)}</span>
                   </div>
+                  {purchase.licenseeName && (
+                    <div className="info-row">
+                      <strong>Licensee Name:</strong>
+                      <span style={{ 
+                        fontWeight: 600, 
+                        color: '#FFA500',
+                        fontSize: '16px'
+                      }}>
+                        {purchase.licenseeName}
+                      </span>
+                    </div>
+                  )}
                   <div className="info-row">
                     <strong>Platform:</strong>
                     <span>

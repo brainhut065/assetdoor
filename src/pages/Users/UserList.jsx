@@ -13,7 +13,7 @@ const UserList = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
   const loadMoreButtonRef = useRef(null);
   const scrollPositionRef = useRef(0);
   const previousUsersLengthRef = useRef(0);

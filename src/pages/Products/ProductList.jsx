@@ -28,6 +28,7 @@ const ProductList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+  const [selectedCurrency, setSelectedCurrency] = useState('INR'); // Default to INR
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const previousProductsLengthRef = useRef(0);
 
@@ -77,11 +78,53 @@ const ProductList = () => {
     }
   };
 
-  const formatPrice = (price) => {
-    if (typeof price === 'number') {
-      return `$${price.toFixed(2)}`;
+  // Get available currencies from IAP products
+  const availableCurrencies = useMemo(() => {
+    const currencies = new Set();
+    iapProducts.forEach(iap => {
+      if (iap.prices && Array.isArray(iap.prices)) {
+        iap.prices.forEach(price => {
+          if (price.currency) {
+            currencies.add(price.currency);
+          }
+        });
+      }
+    });
+    // Always include common currencies
+    ['USD', 'INR', 'EUR'].forEach(c => currencies.add(c));
+    return Array.from(currencies).sort();
+  }, [iapProducts]);
+
+  // Get price for a product from IAP or show FREE
+  const getProductPrice = (product) => {
+    // If product is free, show FREE
+    if (product.isFree) {
+      return 'FREE';
     }
-    return price || '$0.00';
+
+    // Try to get price from IAP products
+    let iapProduct = null;
+    if (product.iapProductIdAndroid) {
+      iapProduct = iapLookup[product.iapProductIdAndroid];
+    } else if (product.iapProductIdIOS) {
+      iapProduct = iapLookup[product.iapProductIdIOS];
+    }
+
+    if (iapProduct && iapProduct.prices && Array.isArray(iapProduct.prices) && iapProduct.prices.length > 0) {
+      // Find price in selected currency
+      const priceObj = iapProduct.prices.find(p => p.currency === selectedCurrency);
+      if (priceObj && priceObj.formatted) {
+        return priceObj.formatted;
+      }
+      
+      // Fallback to first available price
+      if (iapProduct.prices[0] && iapProduct.prices[0].formatted) {
+        return iapProduct.prices[0].formatted;
+      }
+    }
+
+    // If no IAP linked, show FREE
+    return 'FREE';
   };
 
   if (loading) {
@@ -108,6 +151,47 @@ const ProductList = () => {
         </div>
 
         <div className="products-main">
+        {/* Currency Selector */}
+        {availableCurrencies.length > 0 && (
+          <div style={{ 
+            marginBottom: '24px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px',
+            padding: '16px',
+            background: '#FAFAFA',
+            borderRadius: '8px',
+            border: '1px solid #E0E0E0'
+          }}>
+            <label style={{ fontWeight: 600, fontSize: '14px', color: '#1A1A1A' }}>
+              Display Currency:
+            </label>
+            <select
+              value={selectedCurrency}
+              onChange={(e) => setSelectedCurrency(e.target.value)}
+              style={{
+                padding: '8px 16px',
+                border: '1px solid #E0E0E0',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 600,
+                background: '#FFFFFF',
+                cursor: 'pointer',
+                minWidth: '120px'
+              }}
+            >
+              {availableCurrencies.map(currency => (
+                <option key={currency} value={currency}>
+                  {currency}
+                </option>
+              ))}
+            </select>
+            <span style={{ fontSize: '12px', color: '#666' }}>
+              Prices will be shown in {selectedCurrency}
+            </span>
+          </div>
+        )}
+
         {/* Filters and Search */}
         <div className="products-filters">
           <div className="search-bar">
@@ -186,17 +270,13 @@ const ProductList = () => {
                   {/* Category and Price Row */}
                   <div className="product-meta">
                     <span className="product-category">{product.category}</span>
-                    <span className="product-price">{formatPrice(product.price)}</span>
+                    <span className="product-price" style={{
+                      fontWeight: 600,
+                      color: product.isFree || (!product.iapProductIdAndroid && !product.iapProductIdIOS) ? '#4CAF50' : '#1A1A1A'
+                    }}>
+                      {getProductPrice(product)}
+                    </span>
                   </div>
-
-                  {/* Free Product Badge */}
-                  {product.isFree && (
-                    <div className="product-badges">
-                      <span className="product-free-badge">
-                        FREE
-                      </span>
-                    </div>
-                  )}
 
                   {/* IAP Information Section */}
                   {(product.iapProductIdAndroid || product.iapProductIdIOS) && (

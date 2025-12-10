@@ -16,7 +16,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
   
   const { iapProducts } = useIapProducts({ platform: 'All' });
   const { purchases } = usePurchases({});

@@ -14,7 +14,7 @@ const UserDetail = () => {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
   
   const { iapProducts } = useIapProducts({ platform: 'All' });
   
@@ -296,6 +296,7 @@ const UserDetail = () => {
                       <tr>
                         <th>Date</th>
                         <th>Product</th>
+                        <th>Licensee Name</th>
                         <th>Price</th>
                         <th>Platform</th>
                         <th>Status</th>
@@ -314,6 +315,19 @@ const UserDetail = () => {
                               )}
                               <span>{purchase.productTitle || 'N/A'}</span>
                             </div>
+                          </td>
+                          <td className="licensee-cell">
+                            {purchase.licenseeName ? (
+                              <span style={{ 
+                                fontWeight: 600, 
+                                color: '#FFA500',
+                                fontSize: '14px'
+                              }}>
+                                {purchase.licenseeName}
+                              </span>
+                            ) : (
+                              <span style={{ color: '#999', fontStyle: 'italic' }}>N/A</span>
+                            )}
                           </td>
                           <td className="price-cell">{getPurchasePrice(purchase)}</td>
                           <td className="platform-cell">
