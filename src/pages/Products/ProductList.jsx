@@ -1,21 +1,50 @@
 // Products List Page
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts } from '../../hooks/useProducts';
 import { useCategories } from '../../hooks/useCategories';
+import { useIapProducts } from '../../hooks/useIapProducts';
 import Layout from '../../components/Layout/Layout';
 import { theme } from '../../styles/theme';
 import './ProductList.css';
 
 const ProductList = () => {
-  const { products, loading, error, removeProduct } = useProducts();
+  const { products, loading, error, hasMore, loadMore, removeProduct } = useProducts();
+  const loadMoreButtonRef = useRef(null);
+  const scrollPositionRef = useRef(0);
   const { categories } = useCategories();
+  const { iapProducts } = useIapProducts({ platform: 'All' });
   const navigate = useNavigate();
+  
+  // Create IAP lookup map by ID
+  const iapLookup = useMemo(() => {
+    const lookup = {};
+    iapProducts.forEach(iap => {
+      lookup[iap.id] = iap;
+    });
+    return lookup;
+  }, [iapProducts]);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const previousProductsLengthRef = useRef(0);
+
+  // Restore scroll position after loading more items
+  useEffect(() => {
+    if (!loading && products.length > previousProductsLengthRef.current && scrollPositionRef.current > 0) {
+      // Items were added, restore scroll position
+      setTimeout(() => {
+        window.scrollTo({
+          top: scrollPositionRef.current,
+          behavior: 'auto'
+        });
+        scrollPositionRef.current = 0;
+      }, 0);
+    }
+    previousProductsLengthRef.current = products.length;
+  }, [loading, products.length]);
 
   // Filter products
   const filteredProducts = useMemo(() => {
@@ -153,10 +182,52 @@ const ProductList = () => {
                 <div className="product-info">
                   <h3>{product.title}</h3>
                   <p className="product-description">{product.description}</p>
+                  
+                  {/* Category and Price Row */}
                   <div className="product-meta">
                     <span className="product-category">{product.category}</span>
                     <span className="product-price">{formatPrice(product.price)}</span>
                   </div>
+
+                  {/* Free Product Badge */}
+                  {product.isFree && (
+                    <div className="product-badges">
+                      <span className="product-free-badge">
+                        FREE
+                      </span>
+                    </div>
+                  )}
+
+                  {/* IAP Information Section */}
+                  {(product.iapProductIdAndroid || product.iapProductIdIOS) && (
+                    <div className="product-iap-section">
+                      <div className="product-iap-badges">
+                        <span className="product-iap-badge">
+                          {product.iapProductIdAndroid && product.iapProductIdIOS ? 'IAP (Both)' : 
+                           product.iapProductIdAndroid ? 'IAP (Android)' : 'IAP (iOS)'}
+                        </span>
+                      </div>
+                      <div className="product-iap-skus">
+                        {product.iapProductIdAndroid && iapLookup[product.iapProductIdAndroid] && (
+                          <div className="iap-sku-item">
+                            <span className="iap-sku-icon">🤖</span>
+                            <span className="iap-sku-text">
+                              {iapLookup[product.iapProductIdAndroid].sku || product.iapProductIdAndroid}
+                            </span>
+                          </div>
+                        )}
+                        {product.iapProductIdIOS && iapLookup[product.iapProductIdIOS] && (
+                          <div className="iap-sku-item">
+                            <span className="iap-sku-icon">🍎</span>
+                            <span className="iap-sku-text">
+                              {iapLookup[product.iapProductIdIOS].sku || iapLookup[product.iapProductIdIOS].productId || product.iapProductIdIOS}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="product-actions">
                     <button
                       className="edit-button"
@@ -178,8 +249,29 @@ const ProductList = () => {
         )}
 
         <div className="products-summary">
-          <p>Showing {filteredProducts.length} of {products.length} products</p>
+          <p>Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}</p>
         </div>
+
+        {/* Pagination */}
+        {hasMore && (
+          <div className="pagination-container">
+            <button
+              ref={loadMoreButtonRef}
+              onClick={() => {
+                // Store scroll position before loading
+                if (loadMoreButtonRef.current) {
+                  const buttonPosition = loadMoreButtonRef.current.getBoundingClientRect().top + window.scrollY;
+                  scrollPositionRef.current = buttonPosition;
+                }
+                loadMore();
+              }}
+              disabled={loading}
+              className="load-more-button"
+            >
+              {loading ? 'Loading...' : 'Load More'}
+            </button>
+          </div>
+        )}
         </div>
       </div>
     </Layout>

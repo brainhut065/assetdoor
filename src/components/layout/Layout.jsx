@@ -24,6 +24,7 @@ const Layout = ({ children, title, showBack = false, backPath = '/dashboard' }) 
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/products', label: 'Products' },
     { path: '/categories', label: 'Categories' },
+    { path: '/iap-products', label: 'IAP Products' },
     { path: '/purchases', label: 'Purchases' },
     { path: '/users', label: 'Users' },
   ];
@@ -57,7 +58,9 @@ const Layout = ({ children, title, showBack = false, backPath = '/dashboard' }) 
       {/* Top Navigation Bar */}
       <header className="admin-header">
         <div className="header-left">
-          <div className="app-icon">📦</div>
+          <div className="app-icon">
+            <img src="/app_icon.png" alt="AssetDoor Logo" />
+          </div>
         </div>
 
         <nav className="header-nav">

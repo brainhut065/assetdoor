@@ -1,5 +1,5 @@
 // Categories Management Page
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCategories } from '../../hooks/useCategories';
 import { useProducts } from '../../hooks/useProducts';
 import Layout from '../../components/Layout/Layout';
@@ -7,10 +7,28 @@ import { theme } from '../../styles/theme';
 import './Categories.css';
 
 const Categories = () => {
-  const { categories, loading, error, addCategory, editCategory, removeCategory } = useCategories();
+  const { categories, loading, error, hasMore, loadMore, addCategory, editCategory, removeCategory } = useCategories();
   const { products } = useProducts();
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const loadMoreButtonRef = useRef(null);
+  const scrollPositionRef = useRef(0);
+  const previousCategoriesLengthRef = useRef(0);
+
+  // Restore scroll position after loading more items
+  useEffect(() => {
+    if (!loading && categories.length > previousCategoriesLengthRef.current && scrollPositionRef.current > 0) {
+      // Items were added, restore scroll position
+      setTimeout(() => {
+        window.scrollTo({
+          top: scrollPositionRef.current,
+          behavior: 'auto'
+        });
+        scrollPositionRef.current = 0;
+      }, 0);
+    }
+    previousCategoriesLengthRef.current = categories.length;
+  }, [loading, categories.length]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -273,6 +291,27 @@ const Categories = () => {
                   </div>
                 </div>
               ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {hasMore && (
+          <div className="pagination-container">
+            <button
+              ref={loadMoreButtonRef}
+              onClick={() => {
+                // Store scroll position before loading
+                if (loadMoreButtonRef.current) {
+                  const buttonPosition = loadMoreButtonRef.current.getBoundingClientRect().top + window.scrollY;
+                  scrollPositionRef.current = buttonPosition;
+                }
+                loadMore();
+              }}
+              disabled={loading}
+              className="load-more-button"
+            >
+              {loading ? 'Loading...' : 'Load More'}
+            </button>
           </div>
         )}
         </div>

@@ -1,7 +1,8 @@
 // Purchases List Page
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePurchases } from '../../hooks/usePurchases';
+import { useIapProducts } from '../../hooks/useIapProducts';
 import Layout from '../../components/Layout/Layout';
 import { formatPrice, formatDate } from '../../utils/formatters';
 import './PurchaseList.css';
@@ -13,9 +14,107 @@ const PurchaseList = () => {
     endDate: '',
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCurrency, setSelectedCurrency] = useState('USD'); // Default to USD
   
-  const { purchases, loading, error } = usePurchases(filters);
+  const { purchases, loading, error, hasMore, loadMore } = usePurchases(filters);
+  const loadMoreButtonRef = useRef(null);
+  const scrollPositionRef = useRef(0);
+  const previousPurchasesLengthRef = useRef(0);
+
+  // Restore scroll position after loading more items
+  useEffect(() => {
+    if (!loading && purchases.length > previousPurchasesLengthRef.current && scrollPositionRef.current > 0) {
+      // Items were added, restore scroll position
+      setTimeout(() => {
+        window.scrollTo({
+          top: scrollPositionRef.current,
+          behavior: 'auto'
+        });
+        scrollPositionRef.current = 0;
+      }, 0);
+    }
+    previousPurchasesLengthRef.current = purchases.length;
+  }, [loading, purchases.length]);
+  const { iapProducts } = useIapProducts({ platform: 'All' });
   const navigate = useNavigate();
+  
+  // Create IAP product lookup map by ID (SKU/productId)
+  const iapProductLookup = useMemo(() => {
+    const lookup = {};
+    iapProducts.forEach(iap => {
+      lookup[iap.id] = iap;
+    });
+    return lookup;
+  }, [iapProducts]);
+  
+  // Get available currencies from IAP products
+  const availableCurrencies = useMemo(() => {
+    const currencies = new Set();
+    iapProducts.forEach(iap => {
+      if (iap.prices && Array.isArray(iap.prices)) {
+        iap.prices.forEach(price => {
+          if (price.currency) {
+            currencies.add(price.currency);
+          }
+        });
+      }
+    });
+    // Always include common currencies
+    ['USD', 'INR', 'EUR'].forEach(c => currencies.add(c));
+    return Array.from(currencies).sort();
+  }, [iapProducts]);
+  
+  // Get price for a purchase in selected currency
+  const getPurchasePrice = (purchase) => {
+    if (!purchase.iapProductId) {
+      // Fallback to stored price if no IAP product ID
+      return purchase.productPriceFormatted || formatPrice(purchase.productPrice);
+    }
+    
+    const iapProduct = iapProductLookup[purchase.iapProductId];
+    if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices)) {
+      // Fallback to stored price
+      return purchase.productPriceFormatted || formatPrice(purchase.productPrice);
+    }
+    
+    // Find price in selected currency
+    const priceObj = iapProduct.prices.find(p => p.currency === selectedCurrency);
+    if (priceObj && priceObj.formatted) {
+      return priceObj.formatted;
+    }
+    
+    // Fallback to first available price
+    if (iapProduct.prices.length > 0 && iapProduct.prices[0].formatted) {
+      return iapProduct.prices[0].formatted;
+    }
+    
+    // Final fallback
+    return purchase.productPriceFormatted || formatPrice(purchase.productPrice);
+  };
+  
+  // Get price amount (numeric) for a purchase in selected currency
+  const getPurchasePriceAmount = (purchase) => {
+    if (!purchase.iapProductId) {
+      return purchase.productPrice || 0;
+    }
+    
+    const iapProduct = iapProductLookup[purchase.iapProductId];
+    if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices)) {
+      return purchase.productPrice || 0;
+    }
+    
+    const priceObj = iapProduct.prices.find(p => p.currency === selectedCurrency);
+    if (priceObj && priceObj.amount) {
+      return priceObj.amount;
+    }
+    
+    // Fallback to first available price
+    if (iapProduct.prices.length > 0 && iapProduct.prices[0].amount) {
+      return iapProduct.prices[0].amount;
+    }
+    
+    return purchase.productPrice || 0;
+  };
 
   // Filter purchases by search query
   const filteredPurchases = useMemo(() => {
@@ -25,8 +124,7 @@ const PurchaseList = () => {
     return purchases.filter(p => 
       p.transactionId?.toLowerCase().includes(query) ||
       p.productTitle?.toLowerCase().includes(query) ||
-      p.userEmail?.toLowerCase().includes(query) ||
-      p.userName?.toLowerCase().includes(query)
+      p.userEmail?.toLowerCase().includes(query)
     );
   }, [purchases, searchQuery]);
 
@@ -61,10 +159,15 @@ const PurchaseList = () => {
     return platform === 'ios' ? '🍎' : platform === 'android' ? '🤖' : '📱';
   };
 
-  // Calculate summary stats
+  // Calculate summary stats in selected currency
   const summary = useMemo(() => {
     const filtered = filteredPurchases.filter(p => p.status === 'completed');
-    const totalRevenue = filtered.reduce((sum, p) => sum + (p.productPrice || 0), 0);
+    
+    // Calculate totals in selected currency
+    const totalRevenue = filtered.reduce((sum, p) => {
+      return sum + getPurchasePriceAmount(p);
+    }, 0);
+    
     const avgOrderValue = filtered.length > 0 ? totalRevenue / filtered.length : 0;
 
     return {
@@ -73,7 +176,7 @@ const PurchaseList = () => {
       totalRevenue,
       avgOrderValue,
     };
-  }, [filteredPurchases]);
+  }, [filteredPurchases, iapProductLookup, selectedCurrency]);
 
   if (loading) {
     return (
@@ -97,6 +200,45 @@ const PurchaseList = () => {
           </div>
         )}
 
+        {/* Currency Selector */}
+        <div style={{ 
+          marginBottom: '24px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px',
+          padding: '16px',
+          background: '#FAFAFA',
+          borderRadius: '8px',
+          border: '1px solid #E0E0E0'
+        }}>
+          <label style={{ fontWeight: 600, fontSize: '14px', color: '#1A1A1A' }}>
+            Display Currency:
+          </label>
+          <select
+            value={selectedCurrency}
+            onChange={(e) => setSelectedCurrency(e.target.value)}
+            style={{
+              padding: '8px 16px',
+              border: '1px solid #E0E0E0',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: 600,
+              background: '#FFFFFF',
+              cursor: 'pointer',
+              minWidth: '120px'
+            }}
+          >
+            {availableCurrencies.map(currency => (
+              <option key={currency} value={currency}>
+                {currency}
+              </option>
+            ))}
+          </select>
+          <span style={{ fontSize: '12px', color: '#666' }}>
+            All prices and revenue will be shown in {selectedCurrency}
+          </span>
+        </div>
+
         {/* Summary Cards */}
         <div className="summary-cards">
           <div className="summary-card">
@@ -108,12 +250,16 @@ const PurchaseList = () => {
             <div className="summary-value">{summary.completedPurchases}</div>
           </div>
           <div className="summary-card summary-card-highlight">
-            <div className="summary-label">Total Revenue</div>
-            <div className="summary-value">{formatPrice(summary.totalRevenue)}</div>
+            <div className="summary-label">Total Revenue ({selectedCurrency})</div>
+            <div className="summary-value">
+              {formatPrice(summary.totalRevenue, `${selectedCurrency} ${summary.totalRevenue.toFixed(2)}`)}
+            </div>
           </div>
           <div className="summary-card">
-            <div className="summary-label">Avg Order Value</div>
-            <div className="summary-value">{formatPrice(summary.avgOrderValue)}</div>
+            <div className="summary-label">Avg Order Value ({selectedCurrency})</div>
+            <div className="summary-value">
+              {formatPrice(summary.avgOrderValue, `${selectedCurrency} ${summary.avgOrderValue.toFixed(2)}`)}
+            </div>
           </div>
         </div>
 
@@ -202,7 +348,6 @@ const PurchaseList = () => {
                     <td>{formatDate(purchase.purchaseDate)}</td>
                     <td>
                       <div className="user-cell">
-                        <div className="user-name">{purchase.userName || 'N/A'}</div>
                         <div className="user-email">{purchase.userEmail || 'N/A'}</div>
                       </div>
                     </td>
@@ -214,7 +359,9 @@ const PurchaseList = () => {
                         <span>{purchase.productTitle || 'N/A'}</span>
                       </div>
                     </td>
-                    <td className="price-cell">{formatPrice(purchase.productPrice)}</td>
+                    <td className="price-cell">
+                      {getPurchasePrice(purchase)}
+                    </td>
                     <td className="platform-cell">
                       <span className="platform-icon">{getPlatformIcon(purchase.platform)}</span>
                       <span>{purchase.platform || 'N/A'}</span>
@@ -243,8 +390,29 @@ const PurchaseList = () => {
         )}
 
         <div className="purchases-summary">
-          <p>Showing {filteredPurchases.length} of {purchases.length} purchases</p>
+          <p>Showing {filteredPurchases.length} purchase{filteredPurchases.length !== 1 ? 's' : ''}</p>
         </div>
+
+        {/* Pagination */}
+        {hasMore && (
+          <div className="pagination-container">
+            <button
+              ref={loadMoreButtonRef}
+              onClick={() => {
+                // Store scroll position before loading
+                if (loadMoreButtonRef.current) {
+                  const buttonPosition = loadMoreButtonRef.current.getBoundingClientRect().top + window.scrollY;
+                  scrollPositionRef.current = buttonPosition;
+                }
+                loadMore();
+              }}
+              disabled={loading}
+              className="load-more-button"
+            >
+              {loading ? 'Loading...' : 'Load More'}
+            </button>
+          </div>
+        )}
         </div>
       </div>
     </Layout>

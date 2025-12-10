@@ -206,6 +206,39 @@
   cursor: pointer;
 }
 
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 0;
+  margin-top: 24px;
+}
+
+.load-more-button {
+  padding: 14px 32px;
+  background: #1A1A1A;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 150px;
+}
+
+.load-more-button:hover:not(:disabled) {
+  background: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.load-more-button:disabled {
+  background: #CCCCCC;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .categories-list {
   display: flex;
   flex-direction: column;

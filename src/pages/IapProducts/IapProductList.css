@@ -1,0 +1,398 @@
+.iap-products-page {
+  min-height: 100vh;
+  background-color: #FFFFFF;
+}
+
+.iap-products-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 18px;
+  color: #4A4A4A;
+}
+
+.iap-products-main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.error-banner {
+  padding: 12px 16px;
+  background: #FFEBEE;
+  border: 1px solid #E53935;
+  border-radius: 8px;
+  color: #E53935;
+  margin-bottom: 24px;
+}
+
+.iap-products-header-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.sync-button,
+.refresh-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sync-button {
+  background-color: #FFC107;
+  color: #1A1A1A;
+}
+
+.sync-button:hover:not(:disabled) {
+  background-color: #FFB300;
+  transform: translateY(-1px);
+}
+
+.sync-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refresh-button {
+  background-color: #F5F5F5;
+  color: #4A4A4A;
+  border: 1px solid #E0E0E0;
+}
+
+.refresh-button:hover {
+  background-color: #EEEEEE;
+}
+
+.sync-status-banner {
+  padding: 12px 16px;
+  background: #F5F5F5;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.sync-status-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #4A4A4A;
+}
+
+.sync-error {
+  color: #E53935;
+  font-weight: 600;
+}
+
+.sync-success {
+  color: #4CAF50;
+  font-weight: 600;
+}
+
+.iap-products-filters {
+  margin-bottom: 24px;
+}
+
+.search-bar {
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 500px;
+  padding: 12px 16px;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #FFC107;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #757575;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-select {
+  padding: 10px 12px;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #FFFFFF;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #FFC107;
+}
+
+.clear-filters-button {
+  padding: 10px 16px;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  color: #4A4A4A;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-filters-button:hover {
+  background-color: #F5F5F5;
+  border-color: #BDBDBD;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #757575;
+}
+
+.empty-state p {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.empty-state-hint {
+  font-size: 14px;
+  color: #9E9E9E;
+}
+
+.iap-products-table-container {
+  overflow-x: auto;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.iap-products-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #FFFFFF;
+}
+
+.iap-products-table thead {
+  background-color: #FAFAFA;
+  border-bottom: 2px solid #E0E0E0;
+}
+
+.iap-products-table th {
+  padding: 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: #757575;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.iap-products-table td {
+  padding: 16px;
+  border-bottom: 1px solid #F5F5F5;
+  font-size: 14px;
+  color: #1A1A1A;
+}
+
+.iap-products-table tbody tr:hover {
+  background-color: #FAFAFA;
+}
+
+.iap-products-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.platform-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.platform-badge.android {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+}
+
+.platform-badge.ios {
+  background-color: #E3F2FD;
+  color: #1565C0;
+}
+
+.sku-cell code {
+  background-color: #F5F5F5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  color: #4A4A4A;
+}
+
+.product-name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-name {
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.product-description {
+  font-size: 12px;
+  color: #757575;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price-cell {
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.price-hint {
+  font-size: 11px;
+  color: #9E9E9E;
+  font-weight: normal;
+  margin-top: 2px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-badge.status-active {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+}
+
+.status-badge.status-inactive {
+  background-color: #FFEBEE;
+  color: #C62828;
+}
+
+.linked-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.linked-badge.linked {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+}
+
+.linked-badge.not-linked {
+  background-color: #FFF3E0;
+  color: #E65100;
+}
+
+.synced-cell {
+  font-size: 12px;
+  color: #757575;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 0;
+  margin-top: 24px;
+}
+
+.load-more-button {
+  padding: 14px 32px;
+  background: #1A1A1A;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 150px;
+}
+
+.load-more-button:hover:not(:disabled) {
+  background: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.load-more-button:disabled {
+  background: #CCCCCC;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.iap-products-summary {
+  padding: 16px 0;
+  text-align: center;
+  color: #757575;
+  font-size: 14px;
+  border-top: 1px solid #F5F5F5;
+}
+
+@media (max-width: 768px) {
+  .iap-products-main {
+    padding: 16px;
+  }
+
+  .iap-products-table-container {
+    overflow-x: scroll;
+  }
+
+  .iap-products-table {
+    min-width: 800px;
+  }
+
+  .filter-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+}
+

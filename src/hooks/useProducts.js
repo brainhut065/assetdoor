@@ -11,23 +11,57 @@ export const useProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [lastDoc, setLastDoc] = useState(null);
+  const [lastDocSnapshot, setLastDocSnapshot] = useState(null);
+  const pageSize = 20;
 
   useEffect(() => {
-    fetchProducts();
+    setLastDoc(null);
+    setLastDocSnapshot(null);
+    fetchProducts(true);
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (reset = false) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getProducts();
-      setProducts(data);
+      
+      const pagination = {
+        pageSize,
+        lastDoc: reset ? null : lastDoc,
+        lastDocSnapshot: reset ? null : lastDocSnapshot,
+      };
+      
+      const result = await getProducts(pagination);
+      
+      if (reset) {
+        setProducts(result.products);
+      } else {
+        setProducts(prev => [...prev, ...result.products]);
+      }
+      
+      setHasMore(result.hasMore);
+      setLastDoc(result.lastDoc);
+      setLastDocSnapshot(result.lastDocSnapshot);
     } catch (err) {
       setError(err.message);
       console.error('Error fetching products:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      fetchProducts(false);
+    }
+  };
+
+  const resetPagination = () => {
+    setLastDoc(null);
+    setLastDocSnapshot(null);
+    fetchProducts(true);
   };
 
   const addProduct = async (productData) => {
@@ -62,10 +96,12 @@ export const useProducts = () => {
     products,
     loading,
     error,
+    hasMore,
+    loadMore,
     addProduct,
     editProduct,
     removeProduct,
-    refetch: fetchProducts,
+    refetch: resetPagination,
   };
 };
 

@@ -8,7 +8,10 @@ import ProductCreate from '../pages/Products/ProductCreate';
 import ProductEdit from '../pages/Products/ProductEdit';
 import Categories from '../pages/Categories/Categories';
 import PurchaseList from '../pages/Purchases/PurchaseList';
+import PurchaseDetail from '../pages/Purchases/PurchaseDetail';
 import UserList from '../pages/Users/UserList';
+import UserDetail from '../pages/Users/UserDetail';
+import IapProductList from '../pages/IapProducts/IapProductList';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -114,10 +117,34 @@ const AppRoutes = () => {
           }
         />
         <Route
+          path="/purchases/:id"
+          element={
+            <PrivateRoute>
+              <PurchaseDetail />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/users"
           element={
             <PrivateRoute>
               <UserList />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/users/:id"
+          element={
+            <PrivateRoute>
+              <UserDetail />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/iap-products"
+          element={
+            <PrivateRoute>
+              <IapProductList />
             </PrivateRoute>
           }
         />

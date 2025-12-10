@@ -1,11 +1,78 @@
 // Utility functions for formatting data
 import { format } from 'date-fns';
 
-export const formatPrice = (price) => {
+/**
+ * Format price with currency
+ * @param {number|string} price - Price value or formatted string
+ * @param {string} formattedPrice - Optional formatted price string (e.g., "INR 99.00")
+ * @returns {string} Formatted price string
+ */
+export const formatPrice = (price, formattedPrice = null) => {
+  // If formatted price is provided, use it (it already has currency)
+  if (formattedPrice && typeof formattedPrice === 'string' && formattedPrice.trim()) {
+    return formattedPrice;
+  }
+  
+  // If price is a number, default to USD
   if (typeof price === 'number') {
     return `$${price.toFixed(2)}`;
   }
-  return price || '$0.00';
+  
+  // If price is already a string, return it
+  if (typeof price === 'string') {
+    return price;
+  }
+  
+  return '$0.00';
+};
+
+/**
+ * Extract currency from formatted price string
+ * @param {string} formattedPrice - Formatted price string (e.g., "INR 99.00", "USD 9.99")
+ * @returns {string} Currency code (e.g., "INR", "USD", "EUR")
+ */
+export const extractCurrency = (formattedPrice) => {
+  if (!formattedPrice || typeof formattedPrice !== 'string') {
+    return 'USD'; // Default currency
+  }
+  
+  // Try to extract currency code (first word before space)
+  const match = formattedPrice.trim().match(/^([A-Z]{3})\s/);
+  if (match) {
+    return match[1];
+  }
+  
+  // Check for currency symbols
+  if (formattedPrice.includes('₹') || formattedPrice.includes('INR')) {
+    return 'INR';
+  }
+  if (formattedPrice.includes('€') || formattedPrice.includes('EUR')) {
+    return 'EUR';
+  }
+  if (formattedPrice.includes('$') || formattedPrice.includes('USD')) {
+    return 'USD';
+  }
+  
+  return 'USD'; // Default
+};
+
+/**
+ * Extract numeric value from formatted price string
+ * @param {string} formattedPrice - Formatted price string
+ * @returns {number} Numeric price value
+ */
+export const extractPriceValue = (formattedPrice) => {
+  if (!formattedPrice || typeof formattedPrice !== 'string') {
+    return 0;
+  }
+  
+  // Extract numbers (including decimals)
+  const match = formattedPrice.match(/[\d,]+\.?\d*/);
+  if (match) {
+    return parseFloat(match[0].replace(/,/g, ''));
+  }
+  
+  return 0;
 };
 
 export const formatDate = (timestamp) => {

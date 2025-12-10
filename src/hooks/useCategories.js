@@ -11,23 +11,57 @@ export const useCategories = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [lastDoc, setLastDoc] = useState(null);
+  const [lastDocSnapshot, setLastDocSnapshot] = useState(null);
+  const pageSize = 20;
 
   useEffect(() => {
-    fetchCategories();
+    setLastDoc(null);
+    setLastDocSnapshot(null);
+    fetchCategories(true);
   }, []);
 
-  const fetchCategories = async () => {
+  const fetchCategories = async (reset = false) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getCategories();
-      setCategories(data);
+      
+      const pagination = {
+        pageSize,
+        lastDoc: reset ? null : lastDoc,
+        lastDocSnapshot: reset ? null : lastDocSnapshot,
+      };
+      
+      const result = await getCategories(pagination);
+      
+      if (reset) {
+        setCategories(result.categories);
+      } else {
+        setCategories(prev => [...prev, ...result.categories]);
+      }
+      
+      setHasMore(result.hasMore);
+      setLastDoc(result.lastDoc);
+      setLastDocSnapshot(result.lastDocSnapshot);
     } catch (err) {
       setError(err.message);
       console.error('Error fetching categories:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      fetchCategories(false);
+    }
+  };
+
+  const resetPagination = () => {
+    setLastDoc(null);
+    setLastDocSnapshot(null);
+    fetchCategories(true);
   };
 
   const addCategory = async (categoryData) => {
@@ -62,10 +96,12 @@ export const useCategories = () => {
     categories,
     loading,
     error,
+    hasMore,
+    loadMore,
     addCategory,
     editCategory,
     removeCategory,
-    refetch: fetchCategories,
+    refetch: resetPagination,
   };
 };
 

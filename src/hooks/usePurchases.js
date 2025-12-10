@@ -11,23 +11,57 @@ export const usePurchases = (filters = {}) => {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [lastDoc, setLastDoc] = useState(null);
+  const [lastDocSnapshot, setLastDocSnapshot] = useState(null);
+  const pageSize = 20;
 
   useEffect(() => {
-    fetchPurchases();
+    setLastDoc(null);
+    setLastDocSnapshot(null);
+    fetchPurchases(true);
   }, [filters]);
 
-  const fetchPurchases = async () => {
+  const fetchPurchases = async (reset = false) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getPurchases(filters);
-      setPurchases(data);
+      
+      const pagination = {
+        pageSize,
+        lastDoc: reset ? null : lastDoc,
+        lastDocSnapshot: reset ? null : lastDocSnapshot,
+      };
+      
+      const result = await getPurchases(filters, pagination);
+      
+      if (reset) {
+        setPurchases(result.purchases);
+      } else {
+        setPurchases(prev => [...prev, ...result.purchases]);
+      }
+      
+      setHasMore(result.hasMore);
+      setLastDoc(result.lastDoc);
+      setLastDocSnapshot(result.lastDocSnapshot);
     } catch (err) {
       setError(err.message);
       console.error('Error fetching purchases:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      fetchPurchases(false);
+    }
+  };
+
+  const resetPagination = () => {
+    setLastDoc(null);
+    setLastDocSnapshot(null);
+    fetchPurchases(true);
   };
 
   const getPurchaseById = async (id) => {
@@ -62,10 +96,12 @@ export const usePurchases = (filters = {}) => {
     purchases,
     loading,
     error,
+    hasMore,
+    loadMore,
     getPurchaseById,
     updatePurchaseStatus,
     fetchStats,
-    refetch: fetchPurchases,
+    refetch: resetPagination,
   };
 };
 

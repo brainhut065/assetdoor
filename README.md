@@ -361,3 +361,12 @@ This project is private and proprietary.
 [Report Bug](https://github.com/your-repo/issues) • [Request Feature](https://github.com/your-repo/issues)
 
 </div>
+
+## Product ID formats
+- com.yourcompany.yourapp.product_category.product_name
+- e.g. com.assetdoor.app.social_media_packs.3d_icons_and_objects_bundle
+
+## Purchase Option Ids
+- When you create your non-consumable product in the Play Console, you will have to create at least one Purchase Option.
+- You select the "Buy" purchase type.
+- You give this option a unique Purchase Option ID (e.g., permanent-access or full-price-buy).

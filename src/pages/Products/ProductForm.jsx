@@ -1,12 +1,20 @@
 // Product Form Component
 import { useState, useEffect } from 'react';
 import { useCategories } from '../../hooks/useCategories';
+import { useIapProducts } from '../../hooks/useIapProducts';
 import ImageUploader from '../../components/product/ImageUploader';
 import FileUploader from '../../components/product/FileUploader';
+import IapProductDropdown from '../../components/product/IapProductDropdown';
 import './ProductForm.css';
 
 const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
   const { categories, loading: categoriesLoading } = useCategories();
+  const { iapProducts: allIapProducts } = useIapProducts({ platform: 'All' });
+  
+  // Filter IAP products by platform
+  const androidIapProducts = allIapProducts.filter(p => p.platform === 'android');
+  const iosIapProducts = allIapProducts.filter(p => p.platform === 'ios');
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -15,6 +23,12 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
     isActive: true,
     isFeatured: false,
     tags: '',
+    // IAP fields
+    iapProductIdAndroid: null,
+    iapProductIdIOS: null,
+    isFree: false,
+    displayPrice: null,
+    displayCurrency: null,
   });
   const [imageData, setImageData] = useState(null);
   const [fileData, setFileData] = useState(null);
@@ -30,6 +44,12 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
         isActive: product.isActive !== false,
         isFeatured: product.isFeatured || false,
         tags: product.tags ? product.tags.join(', ') : '',
+        // IAP fields
+        iapProductIdAndroid: product.iapProductIdAndroid || null,
+        iapProductIdIOS: product.iapProductIdIOS || null,
+        isFree: product.isFree || false,
+        displayPrice: product.displayPrice || null,
+        displayCurrency: product.displayCurrency || null,
       });
       if (product.imageUrl) {
         setImageData({ url: product.imageUrl, path: product.imagePath });
@@ -55,6 +75,110 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  // Handle IAP product selection
+  const handleIapProductSelect = (platform, iapProductId) => {
+    setFormData(prev => {
+      const newData = { ...prev };
+      
+      if (platform === 'android') {
+        newData.iapProductIdAndroid = iapProductId;
+        // Update display price from selected IAP product
+        if (iapProductId) {
+          const selectedProduct = androidIapProducts.find(p => p.id === iapProductId);
+          if (selectedProduct && selectedProduct.prices && selectedProduct.prices.length > 0) {
+            // Prioritize INR, USD, EUR
+            const preferred = ['INR', 'USD', 'EUR'];
+            let priceObj = null;
+            for (const currency of preferred) {
+              priceObj = selectedProduct.prices.find(p => p.currency === currency);
+              if (priceObj) break;
+            }
+            if (!priceObj && selectedProduct.prices.length > 0) {
+              priceObj = selectedProduct.prices[0];
+            }
+            if (priceObj) {
+              newData.displayPrice = priceObj.amount;
+              newData.displayCurrency = priceObj.currency;
+            }
+          }
+        } else {
+          // Clear display price if no Android IAP and no iOS IAP
+          if (!newData.iapProductIdIOS) {
+            newData.displayPrice = null;
+            newData.displayCurrency = null;
+          }
+        }
+      } else if (platform === 'ios') {
+        newData.iapProductIdIOS = iapProductId;
+        // Update display price from selected IAP product
+        if (iapProductId) {
+          const selectedProduct = iosIapProducts.find(p => p.id === iapProductId);
+          if (selectedProduct && selectedProduct.prices && selectedProduct.prices.length > 0) {
+            const preferred = ['INR', 'USD', 'EUR'];
+            let priceObj = null;
+            for (const currency of preferred) {
+              priceObj = selectedProduct.prices.find(p => p.currency === currency);
+              if (priceObj) break;
+            }
+            if (!priceObj && selectedProduct.prices.length > 0) {
+              priceObj = selectedProduct.prices[0];
+            }
+            if (priceObj) {
+              newData.displayPrice = priceObj.amount;
+              newData.displayCurrency = priceObj.currency;
+            }
+          }
+        } else {
+          // Only clear if no Android IAP is selected
+          if (!newData.iapProductIdAndroid) {
+            newData.displayPrice = null;
+            newData.displayCurrency = null;
+          }
+        }
+      }
+      
+      // If IAP is selected, product is not free
+      if (newData.iapProductIdAndroid || newData.iapProductIdIOS) {
+        newData.isFree = false;
+      }
+      
+      return newData;
+    });
+    
+    // Clear errors when user selects IAP
+    if (errors.isFree || errors.iap) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.isFree;
+        delete newErrors.iap;
+        return newErrors;
+      });
+    }
+  };
+
+  // Handle free product checkbox
+  const handleFreeProductChange = (e) => {
+    const isFree = e.target.checked;
+    setFormData(prev => ({
+      ...prev,
+      isFree,
+      // Clear IAP selections if marking as free
+      iapProductIdAndroid: isFree ? null : prev.iapProductIdAndroid,
+      iapProductIdIOS: isFree ? null : prev.iapProductIdIOS,
+      displayPrice: isFree ? null : prev.displayPrice,
+      displayCurrency: isFree ? null : prev.displayCurrency,
+    }));
+    // Clear errors when user changes free product status
+    if (errors.isFree || errors.iap) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.isFree;
+        delete newErrors.iap;
+        return newErrors;
+      });
     }
   };
 
@@ -94,6 +218,20 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
       newErrors.file = 'Digital file is required';
     }
 
+    // IAP validation
+    // Rule: If no IAP is selected, user MUST select "Free Product"
+    const hasIapSelected = formData.iapProductIdAndroid || formData.iapProductIdIOS;
+    
+    if (!hasIapSelected && !formData.isFree) {
+      newErrors.iap = 'Please link an IAP product or mark as "Free Product"';
+      newErrors.isFree = 'You must select "Free Product" if no IAP is linked';
+    }
+    
+    // If marked as free, IAP should not be linked
+    if (formData.isFree && hasIapSelected) {
+      newErrors.iap = 'Free products cannot have IAP linked. Please clear IAP selections or uncheck "Free Product"';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -126,6 +264,12 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
       fileName: fileData?.name || product?.fileName || fileData?.file?.name || '',
       fileSize: fileData?.size || product?.fileSize || fileData?.file?.size || 0,
       fileType: fileData?.type || product?.fileType || fileData?.file?.type || '',
+      // IAP fields
+      iapProductIdAndroid: formData.iapProductIdAndroid || null,
+      iapProductIdIOS: formData.iapProductIdIOS || null,
+      isFree: formData.isFree || false,
+      displayPrice: formData.displayPrice || null,
+      displayCurrency: formData.displayCurrency || null,
     };
 
     await onSubmit(productData);
@@ -236,6 +380,75 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
             disabled={loading}
           />
           <small className="form-hint">Separate tags with commas</small>
+        </div>
+      </div>
+
+      {/* IAP Configuration Section */}
+      <div className="form-section">
+        <h3 className="form-section-title">IAP Configuration</h3>
+        <div className="form-section-content">
+          {errors.iap && (
+            <div className="error-banner" style={{ marginBottom: '16px' }}>
+              {errors.iap}
+            </div>
+          )}
+
+          <IapProductDropdown
+            label="Android IAP Product"
+            platform="android"
+            iapProducts={androidIapProducts}
+            selectedIapProductId={formData.iapProductIdAndroid}
+            onSelect={(id) => handleIapProductSelect('android', id)}
+            disabled={loading || formData.isFree}
+            error={errors.iapProductIdAndroid}
+          />
+
+          <IapProductDropdown
+            label="iOS IAP Product"
+            platform="ios"
+            iapProducts={iosIapProducts}
+            selectedIapProductId={formData.iapProductIdIOS}
+            onSelect={(id) => handleIapProductSelect('ios', id)}
+            disabled={loading || formData.isFree}
+            error={errors.iapProductIdIOS}
+          />
+
+          <div className="form-group checkbox-group" style={{ marginTop: '16px' }}>
+            <label>
+              <input
+                type="checkbox"
+                name="isFree"
+                checked={formData.isFree}
+                onChange={handleFreeProductChange}
+                disabled={loading}
+                className={errors.isFree ? 'error' : ''}
+              />
+              <span>Free Product (No IAP required) *</span>
+            </label>
+            <small className="form-hint" style={{ display: 'block', marginTop: '4px', color: errors.isFree ? '#E53935' : '#8A8A8A' }}>
+              {errors.isFree 
+                ? errors.isFree 
+                : 'Required: Check this if the product is free and doesn\'t require an IAP purchase. You must select either an IAP product or mark as free.'}
+            </small>
+            {errors.isFree && <span className="error-message" style={{ marginTop: '4px', display: 'block' }}>{errors.isFree}</span>}
+          </div>
+
+          {(formData.iapProductIdAndroid || formData.iapProductIdIOS) && (
+            <div className="iap-info-box" style={{
+              marginTop: '16px',
+              padding: '12px',
+              background: '#E3F2FD',
+              borderRadius: '8px',
+              fontSize: '14px'
+            }}>
+              <strong>IAP Info:</strong>
+              {formData.displayPrice && formData.displayCurrency && (
+                <div style={{ marginTop: '4px' }}>
+                  Display Price: {formData.displayPrice} {formData.displayCurrency}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

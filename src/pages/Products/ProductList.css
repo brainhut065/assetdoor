@@ -300,8 +300,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: auto;
-  padding-top: 12px;
+  margin-top: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #F5F5F5;
 }
 
 .product-card.grid .product-category {
@@ -317,6 +318,95 @@
   font-size: 18px;
   font-weight: 900;
   color: #FFD700;
+}
+
+/* Badges Section */
+.product-badges {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.product-free-badge {
+  padding: 4px 8px;
+  background: #4CAF50;
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* IAP Section for Grid View */
+.product-iap-section {
+  margin-top: 12px;
+  padding: 10px;
+  background: #F8F9FA;
+  border-radius: 6px;
+  border: 1px solid #E9ECEF;
+}
+
+.product-iap-badges {
+  margin-bottom: 8px;
+}
+
+.product-iap-badge {
+  padding: 4px 8px;
+  background: #2196F3;
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.product-iap-skus {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.iap-sku-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #E3F2FD;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.iap-sku-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.iap-sku-text {
+  font-family: 'Courier New', monospace;
+  color: #1976D2;
+  font-weight: 500;
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+/* List View - Keep IAP inline */
+.product-card.list .product-iap-section {
+  margin-top: 8px;
+  padding: 8px;
+  background: #F8F9FA;
+  border-radius: 6px;
+  border: 1px solid #E9ECEF;
+}
+
+.product-card.list .product-iap-skus {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.product-card.list .iap-sku-item {
+  display: inline-flex;
 }
 
 .product-card.grid .product-actions {
@@ -366,6 +456,39 @@
 .delete-button:hover {
   background: #E53935;
   color: #FFFFFF;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 0;
+  margin-top: 24px;
+}
+
+.load-more-button {
+  padding: 14px 32px;
+  background: #1A1A1A;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 150px;
+}
+
+.load-more-button:hover:not(:disabled) {
+  background: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.load-more-button:disabled {
+  background: #CCCCCC;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .products-summary {

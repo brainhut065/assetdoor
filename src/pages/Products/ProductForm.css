@@ -140,6 +140,39 @@
   cursor: not-allowed;
 }
 
+/* IAP Configuration Section */
+.form-section {
+  margin: 32px 0;
+  padding: 24px;
+  background: #FAFAFA;
+  border-radius: 8px;
+  border: 1px solid #E0E0E0;
+}
+
+.form-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #E0E0E0;
+}
+
+.form-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.error-banner {
+  padding: 12px;
+  background: #FFEBEE;
+  color: #C62828;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   .form-row-2 {
     grid-template-columns: 1fr;
