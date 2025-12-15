@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getPurchase } from '../../services/firebase/firestore';
 import { useIapProducts } from '../../hooks/useIapProducts';
 import Layout from '../../components/layout/Layout';
-import { formatPrice, formatDate } from '../../utils/formatters';
+import { formatPrice, formatDate, formatAmountInCurrency } from '../../utils/formatters';
 import './PurchaseDetail.css';
 
 const PurchaseDetail = () => {
@@ -44,25 +44,61 @@ const PurchaseDetail = () => {
   
   // Get price for purchase in selected currency
   const getPurchasePrice = (purchase) => {
+    // Always try to get price from IAP products first (never use product collection price)
     if (!purchase.iapProductId) {
-      return purchase.productPriceFormatted || formatPrice(purchase.productPrice);
+      // No IAP product ID - show FREE
+      return 'FREE';
     }
     
     const iapProduct = iapProductLookup[purchase.iapProductId];
-    if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices)) {
-      return purchase.productPriceFormatted || formatPrice(purchase.productPrice);
+    if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices) || iapProduct.prices.length === 0) {
+      // IAP product not found or has no prices - show FREE
+      return 'FREE';
     }
     
+    // Find price in selected currency (preferred)
     const priceObj = iapProduct.prices.find(p => p.currency === selectedCurrency);
-    if (priceObj && priceObj.formatted) {
-      return priceObj.formatted;
+    if (priceObj) {
+      // If we have the selected currency, use its formatted price
+      if (priceObj.formatted) {
+        return priceObj.formatted;
+      }
+      // If formatted is missing but amount exists, format it in selected currency
+      if (priceObj.amount !== undefined && priceObj.amount !== null) {
+        return formatAmountInCurrency(priceObj.amount, selectedCurrency);
+      }
     }
     
-    if (iapProduct.prices.length > 0 && iapProduct.prices[0].formatted) {
-      return iapProduct.prices[0].formatted;
+    // Selected currency not available - get amount from any available price and format in selected currency
+    // Try preferred order: INR, USD, EUR, then first available
+    const preferredCurrencies = ['INR', 'USD', 'EUR'];
+    for (const currency of preferredCurrencies) {
+      const preferredPrice = iapProduct.prices.find(p => p.currency === currency);
+      if (preferredPrice && preferredPrice.amount !== undefined && preferredPrice.amount !== null) {
+        // Format the amount in the selected currency
+        return formatAmountInCurrency(preferredPrice.amount, selectedCurrency);
+      }
     }
     
-    return purchase.productPriceFormatted || formatPrice(purchase.productPrice);
+    // Last resort: use first available price amount and format in selected currency
+    if (iapProduct.prices.length > 0) {
+      const firstPrice = iapProduct.prices[0];
+      if (firstPrice.amount !== undefined && firstPrice.amount !== null) {
+        return formatAmountInCurrency(firstPrice.amount, selectedCurrency);
+      }
+      // If only formatted exists, try to extract amount and format
+      if (firstPrice.formatted) {
+        // Try to extract numeric value from formatted string
+        const match = firstPrice.formatted.match(/[\d,]+\.?\d*/);
+        if (match) {
+          const amount = parseFloat(match[0].replace(/,/g, ''));
+          return formatAmountInCurrency(amount, selectedCurrency);
+        }
+      }
+    }
+    
+    // Should never reach here, but show FREE as fallback
+    return 'FREE';
   };
 
   useEffect(() => {

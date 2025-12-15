@@ -186,12 +186,24 @@ const updateIapProductLinks = async (productId, oldProductData, newProductData) 
   }
 };
 
-export const getProducts = async (pagination = {}) => {
+export const getProducts = async (pagination = {}, filters = {}) => {
   try {
     const pageSize = pagination.pageSize || 20;
     const lastDoc = pagination.lastDoc || null;
     
-    let q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
+    let q = query(collection(db, 'products'));
+    
+    // Apply category filter if provided (filter by categoryId)
+    // Note: This will only return products with categoryId field
+    // Old products without categoryId need to be updated to include this field
+    if (filters.categoryId) {
+      q = query(q, where('categoryId', '==', filters.categoryId));
+    }
+    
+    // Apply orderBy (must come after where clause for composite index)
+    // Note: If filtering by categoryId, you may need a composite index:
+    // Collection: products, Fields: categoryId (Ascending), createdAt (Descending)
+    q = query(q, orderBy('createdAt', 'desc'));
     
     // Add pagination
     if (pagination.lastDocSnapshot) {
@@ -251,8 +263,15 @@ export const getProduct = async (id) => {
 
 export const createProduct = async (productData) => {
   try {
+    // Ensure categoryId is always present (required field)
+    if (!productData.categoryId) {
+      throw new Error('categoryId is required when creating a product');
+    }
+
     const docRef = await addDoc(collection(db, 'products'), {
       ...productData,
+      categoryId: productData.categoryId, // Explicitly ensure categoryId is saved
+      category: productData.category || '', // Keep category name for display/search
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
@@ -273,10 +292,17 @@ export const updateProduct = async (id, productData) => {
     const oldProductDoc = await getDoc(doc(db, 'products', id));
     const oldProductData = oldProductDoc.exists() ? oldProductDoc.data() : null;
 
+    // Ensure categoryId is always present (required field)
+    if (!productData.categoryId) {
+      throw new Error('categoryId is required when updating a product');
+    }
+
     // Update product document
     const docRef = doc(db, 'products', id);
     await updateDoc(docRef, {
       ...productData,
+      categoryId: productData.categoryId, // Explicitly ensure categoryId is saved
+      category: productData.category || oldProductData?.category || '', // Keep category name for display/search
       updatedAt: Timestamp.now(),
     });
 
@@ -577,6 +603,32 @@ export const getPurchasesCount = async (filters = {}) => {
   } catch (error) {
     console.error('Error getting purchases count:', error);
     return 0;
+  }
+};
+
+// Get all purchases without pagination (for counting purposes)
+export const getAllPurchasesForCounting = async () => {
+  try {
+    let q = query(collection(db, 'purchases'));
+    
+    const snapshot = await getDocs(q);
+    const purchases = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return { 
+        id: doc.id, 
+        ...data,
+        userId: data.userId || null // Ensure userId is explicitly set
+      };
+    });
+    
+    console.log('DEBUG getAllPurchasesForCounting: Fetched', purchases.length, 'purchases');
+    console.log('DEBUG getAllPurchasesForCounting: Purchases with userIds:', purchases.filter(p => p.userId).length);
+    console.log('DEBUG getAllPurchasesForCounting: Unique userIds:', [...new Set(purchases.filter(p => p.userId).map(p => p.userId))]);
+    
+    return purchases;
+  } catch (error) {
+    console.error('Error fetching all purchases for counting:', error);
+    throw error;
   }
 };
 

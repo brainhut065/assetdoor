@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getUser, getUserPurchases } from '../../services/firebase/firestore';
 import { useIapProducts } from '../../hooks/useIapProducts';
 import Layout from '../../components/layout/Layout';
-import { formatPrice, formatDate } from '../../utils/formatters';
+import { formatPrice, formatDate, formatAmountInCurrency } from '../../utils/formatters';
 import './UserDetail.css';
 
 const UserDetail = () => {
@@ -45,49 +45,99 @@ const UserDetail = () => {
   
   // Get price amount for a purchase in selected currency
   const getPurchasePriceAmount = (purchase) => {
+    // Always try to get price from IAP products first (never use product collection price)
     if (!purchase.iapProductId) {
-      return purchase.productPrice || 0;
+      // No IAP product ID - return 0 (FREE)
+      return 0;
     }
     
     const iapProduct = iapProductLookup[purchase.iapProductId];
-    if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices)) {
-      return purchase.productPrice || 0;
+    if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices) || iapProduct.prices.length === 0) {
+      // IAP product not found or has no prices - return 0 (FREE)
+      return 0;
     }
     
+    // Find price in selected currency (preferred)
     const priceObj = iapProduct.prices.find(p => p.currency === selectedCurrency);
-    if (priceObj && priceObj.amount) {
+    if (priceObj && priceObj.amount !== undefined && priceObj.amount !== null) {
       return priceObj.amount;
     }
     
-    // Fallback to first available price
-    if (iapProduct.prices.length > 0 && iapProduct.prices[0].amount) {
+    // If selected currency not available, try preferred order: INR, USD, EUR, then first available
+    const preferredCurrencies = ['INR', 'USD', 'EUR'];
+    for (const currency of preferredCurrencies) {
+      const preferredPrice = iapProduct.prices.find(p => p.currency === currency);
+      if (preferredPrice && preferredPrice.amount !== undefined && preferredPrice.amount !== null) {
+        return preferredPrice.amount;
+      }
+    }
+    
+    // Last resort: use first available price amount
+    if (iapProduct.prices.length > 0 && iapProduct.prices[0].amount !== undefined && iapProduct.prices[0].amount !== null) {
       return iapProduct.prices[0].amount;
     }
     
-    return purchase.productPrice || 0;
+    // Should never reach here, but return 0 (FREE)
+    return 0;
   };
   
   // Get price for a purchase in selected currency (formatted)
   const getPurchasePrice = (purchase) => {
+    // Always try to get price from IAP products first (never use product collection price)
     if (!purchase.iapProductId) {
-      return purchase.productPriceFormatted || formatPrice(purchase.productPrice);
+      // No IAP product ID - show FREE
+      return 'FREE';
     }
     
     const iapProduct = iapProductLookup[purchase.iapProductId];
-    if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices)) {
-      return purchase.productPriceFormatted || formatPrice(purchase.productPrice);
+    if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices) || iapProduct.prices.length === 0) {
+      // IAP product not found or has no prices - show FREE
+      return 'FREE';
     }
     
+    // Find price in selected currency (preferred)
     const priceObj = iapProduct.prices.find(p => p.currency === selectedCurrency);
-    if (priceObj && priceObj.formatted) {
-      return priceObj.formatted;
+    if (priceObj) {
+      // If we have the selected currency, use its formatted price
+      if (priceObj.formatted) {
+        return priceObj.formatted;
+      }
+      // If formatted is missing but amount exists, format it in selected currency
+      if (priceObj.amount !== undefined && priceObj.amount !== null) {
+        return formatAmountInCurrency(priceObj.amount, selectedCurrency);
+      }
     }
     
-    if (iapProduct.prices.length > 0 && iapProduct.prices[0].formatted) {
-      return iapProduct.prices[0].formatted;
+    // Selected currency not available - get amount from any available price and format in selected currency
+    // Try preferred order: INR, USD, EUR, then first available
+    const preferredCurrencies = ['INR', 'USD', 'EUR'];
+    for (const currency of preferredCurrencies) {
+      const preferredPrice = iapProduct.prices.find(p => p.currency === currency);
+      if (preferredPrice && preferredPrice.amount !== undefined && preferredPrice.amount !== null) {
+        // Format the amount in the selected currency
+        return formatAmountInCurrency(preferredPrice.amount, selectedCurrency);
+      }
     }
     
-    return purchase.productPriceFormatted || formatPrice(purchase.productPrice);
+    // Last resort: use first available price amount and format in selected currency
+    if (iapProduct.prices.length > 0) {
+      const firstPrice = iapProduct.prices[0];
+      if (firstPrice.amount !== undefined && firstPrice.amount !== null) {
+        return formatAmountInCurrency(firstPrice.amount, selectedCurrency);
+      }
+      // If only formatted exists, try to extract amount and format
+      if (firstPrice.formatted) {
+        // Try to extract numeric value from formatted string
+        const match = firstPrice.formatted.match(/[\d,]+\.?\d*/);
+        if (match) {
+          const amount = parseFloat(match[0].replace(/,/g, ''));
+          return formatAmountInCurrency(amount, selectedCurrency);
+        }
+      }
+    }
+    
+    // Should never reach here, but show FREE as fallback
+    return 'FREE';
   };
   
   // Calculate total spent in selected currency
@@ -99,6 +149,11 @@ const UserDetail = () => {
       return sum + getPurchasePriceAmount(p);
     }, 0);
   }, [purchases, iapProductLookup, selectedCurrency]);
+
+  // Calculate actual purchase count from fetched purchases
+  const totalPurchasesCount = useMemo(() => {
+    return purchases ? purchases.length : 0;
+  }, [purchases]);
 
   useEffect(() => {
     fetchUserData();
@@ -262,24 +317,14 @@ const UserDetail = () => {
             <div className="user-stats-grid">
               <div className="stat-card">
                 <div className="stat-label">Total Purchases</div>
-                <div className="stat-value">{user.totalPurchases || 0}</div>
+                <div className="stat-value">{totalPurchasesCount}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-label">Total Spent ({selectedCurrency})</div>
                 <div className="stat-value">
-                  {formatPrice(totalSpentInCurrency, `${selectedCurrency} ${totalSpentInCurrency.toFixed(2)}`)}
+                  {formatAmountInCurrency(totalSpentInCurrency, selectedCurrency)}
                 </div>
               </div>
-              <div className="stat-card">
-                <div className="stat-label">Joined</div>
-                <div className="stat-value">{formatDate(user.createdAt)}</div>
-              </div>
-              {user.lastLogin && (
-                <div className="stat-card">
-                  <div className="stat-label">Last Login</div>
-                  <div className="stat-value">{formatDate(user.lastLogin)}</div>
-                </div>
-              )}
             </div>
 
             {/* Purchases Section */}

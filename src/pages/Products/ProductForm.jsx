@@ -18,7 +18,8 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: '',
+    categoryId: '',
+    category: '', // Keep for display/search purposes
     isActive: true,
     isFeatured: false,
     tags: '',
@@ -38,7 +39,8 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
       setFormData({
         title: product.title || '',
         description: product.description || '',
-        category: product.category || '',
+        categoryId: product.categoryId || '',
+        category: product.category || '', // Keep for backward compatibility/display
         isActive: product.isActive !== false,
         isFeatured: product.isFeatured || false,
         tags: product.tags ? product.tags.join(', ') : '',
@@ -195,7 +197,7 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
       newErrors.description = 'Description must be at least 10 characters';
     }
 
-    if (!formData.category) {
+    if (!formData.categoryId) {
       newErrors.category = 'Category is required';
     }
 
@@ -244,10 +246,15 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
     const finalPrice = formData.isFree || !hasIap ? 0 : 0; // Always 0, price comes from IAP
     const finalPriceFormatted = formData.isFree ? 'FREE' : (hasIap ? '$0.00' : 'FREE');
 
+    // Get category name from selected category ID for display/search purposes
+    const selectedCategory = categories.find(cat => cat.id === formData.categoryId);
+    const categoryName = selectedCategory ? selectedCategory.name : '';
+
     const productData = {
       title: formData.title.trim(),
       description: formData.description.trim(),
-      category: formData.category,
+      categoryId: formData.categoryId, // Use category ID (document ID)
+      category: categoryName, // Keep category name for display/search purposes
       price: finalPrice, // Kept for backward compatibility, not used for display
       priceFormatted: finalPriceFormatted, // Kept for backward compatibility, not used for display
       isActive: formData.isActive,
@@ -309,18 +316,18 @@ const ProductForm = ({ product, onSubmit, onCancel, loading }) => {
 
       <div className="form-row">
         <div className="form-group">
-          <label htmlFor="category">Category *</label>
+          <label htmlFor="categoryId">Category *</label>
           <select
-            id="category"
-            name="category"
-            value={formData.category}
+            id="categoryId"
+            name="categoryId"
+            value={formData.categoryId}
             onChange={handleChange}
             disabled={loading || categoriesLoading}
             className={errors.category ? 'error' : ''}
           >
             <option value="">Select category</option>
             {categories.map(cat => (
-              <option key={cat.id} value={cat.name}>
+              <option key={cat.id} value={cat.id}>
                 {cat.name}
               </option>
             ))}

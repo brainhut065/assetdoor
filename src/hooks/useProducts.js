@@ -7,7 +7,7 @@ import {
   deleteProduct,
 } from '../services/firebase/firestore';
 
-export const useProducts = () => {
+export const useProducts = (filters = {}) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,7 +20,7 @@ export const useProducts = () => {
     setLastDoc(null);
     setLastDocSnapshot(null);
     fetchProducts(true);
-  }, []);
+  }, [filters.categoryId]); // Refetch when category filter changes
 
   const fetchProducts = async (reset = false) => {
     try {
@@ -33,7 +33,7 @@ export const useProducts = () => {
         lastDocSnapshot: reset ? null : lastDocSnapshot,
       };
       
-      const result = await getProducts(pagination);
+      const result = await getProducts(pagination, filters);
       
       if (reset) {
         setProducts(result.products);

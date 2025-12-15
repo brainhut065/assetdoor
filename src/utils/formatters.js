@@ -95,3 +95,40 @@ export const formatFileSize = (bytes) => {
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 };
 
+/**
+ * Format a numeric amount in a specific currency
+ * @param {number} amount - Numeric price amount
+ * @param {string} currency - Currency code (e.g., "INR", "USD", "EUR")
+ * @returns {string} Formatted price string in the specified currency
+ */
+export const formatAmountInCurrency = (amount, currency) => {
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    return 'FREE';
+  }
+  
+  if (!currency || typeof currency !== 'string') {
+    currency = 'USD'; // Default currency
+  }
+  
+  try {
+    const formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    return formatter.format(amount);
+  } catch (error) {
+    // Fallback formatting if Intl.NumberFormat fails
+    const currencySymbols = {
+      'INR': '₹',
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
+      'JPY': '¥',
+    };
+    const symbol = currencySymbols[currency] || currency + ' ';
+    return `${symbol}${amount.toFixed(2)}`;
+  }
+};
+

@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useUsers } from '../../hooks/useUsers';
 import { usePurchases } from '../../hooks/usePurchases';
 import { useIapProducts } from '../../hooks/useIapProducts';
+import { getAllPurchasesForCounting } from '../../services/firebase/firestore';
 import Layout from '../../components/layout/Layout';
-import { formatPrice, formatDate } from '../../utils/formatters';
+import { formatPrice, formatDate, formatAmountInCurrency } from '../../utils/formatters';
 import './UserList.css';
 
 const UserList = () => {
@@ -14,12 +15,39 @@ const UserList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedCurrency, setSelectedCurrency] = useState('INR');
+  const [allPurchasesForCounting, setAllPurchasesForCounting] = useState([]);
+  const [loadingPurchases, setLoadingPurchases] = useState(true);
   const loadMoreButtonRef = useRef(null);
   const scrollPositionRef = useRef(0);
   const previousUsersLengthRef = useRef(0);
   
   const { purchases } = usePurchases({});
   const { iapProducts } = useIapProducts({ platform: 'All' });
+  
+  // Fetch all purchases for accurate counting
+  useEffect(() => {
+    const fetchAllPurchases = async () => {
+      try {
+        setLoadingPurchases(true);
+        const allPurchases = await getAllPurchasesForCounting();
+        console.log('DEBUG: Total purchases fetched:', allPurchases.length);
+        console.log('DEBUG: Purchases by userId:', allPurchases.reduce((acc, p) => {
+          const uid = p.userId;
+          if (uid) {
+            acc[uid] = (acc[uid] || 0) + 1;
+          }
+          return acc;
+        }, {}));
+        setAllPurchasesForCounting(allPurchases);
+      } catch (err) {
+        console.error('Error fetching all purchases for counting:', err);
+      } finally {
+        setLoadingPurchases(false);
+      }
+    };
+    
+    fetchAllPurchases();
+  }, []);
   
   // Create IAP product lookup map
   const iapProductLookup = useMemo(() => {
@@ -46,36 +74,50 @@ const UserList = () => {
     return Array.from(currencies).sort();
   }, [iapProducts]);
   
-  // Get price amount for a purchase in selected currency
-  const getPurchasePriceAmount = (purchase) => {
-    if (!purchase.iapProductId) {
-      return purchase.productPrice || 0;
-    }
-    
-    const iapProduct = iapProductLookup[purchase.iapProductId];
-    if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices)) {
-      return purchase.productPrice || 0;
-    }
-    
-    const priceObj = iapProduct.prices.find(p => p.currency === selectedCurrency);
-    if (priceObj && priceObj.amount) {
-      return priceObj.amount;
-    }
-    
-    // Fallback to first available price
-    if (iapProduct.prices.length > 0 && iapProduct.prices[0].amount) {
-      return iapProduct.prices[0].amount;
-    }
-    
-    return purchase.productPrice || 0;
-  };
-  
-  // Calculate user spending in selected currency
+  // Calculate user spending in selected currency (using all purchases for accuracy)
   const userSpendingMap = useMemo(() => {
     const spendingMap = {};
-    if (!purchases || purchases.length === 0) return spendingMap;
+    if (!allPurchasesForCounting || allPurchasesForCounting.length === 0) return spendingMap;
     
-    const completedPurchases = purchases.filter(p => p.status === 'completed');
+    // Helper function to get price amount for a purchase
+    const getPurchasePriceAmount = (purchase) => {
+      // Always try to get price from IAP products first (never use product collection price)
+      if (!purchase.iapProductId) {
+        // No IAP product ID - return 0 (FREE)
+        return 0;
+      }
+      
+      const iapProduct = iapProductLookup[purchase.iapProductId];
+      if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices) || iapProduct.prices.length === 0) {
+        // IAP product not found or has no prices - return 0 (FREE)
+        return 0;
+      }
+      
+      // Find price in selected currency (preferred)
+      const priceObj = iapProduct.prices.find(p => p.currency === selectedCurrency);
+      if (priceObj && priceObj.amount !== undefined && priceObj.amount !== null) {
+        return priceObj.amount;
+      }
+      
+      // If selected currency not available, try preferred order: INR, USD, EUR, then first available
+      const preferredCurrencies = ['INR', 'USD', 'EUR'];
+      for (const currency of preferredCurrencies) {
+        const preferredPrice = iapProduct.prices.find(p => p.currency === currency);
+        if (preferredPrice && preferredPrice.amount !== undefined && preferredPrice.amount !== null) {
+          return preferredPrice.amount;
+        }
+      }
+      
+      // Last resort: use first available price amount
+      if (iapProduct.prices.length > 0 && iapProduct.prices[0].amount !== undefined && iapProduct.prices[0].amount !== null) {
+        return iapProduct.prices[0].amount;
+      }
+      
+      // Should never reach here, but return 0 (FREE)
+      return 0;
+    };
+    
+    const completedPurchases = allPurchasesForCounting.filter(p => p.status === 'completed');
     completedPurchases.forEach(purchase => {
       const userId = purchase.userId;
       if (!userId) return;
@@ -87,7 +129,48 @@ const UserList = () => {
     });
     
     return spendingMap;
-  }, [purchases, iapProductLookup, selectedCurrency]);
+  }, [allPurchasesForCounting, iapProductLookup, selectedCurrency]);
+
+  // Calculate actual purchase counts from all purchases collection (not paginated)
+  const userPurchaseCountMap = useMemo(() => {
+    const countMap = {};
+    
+    if (!allPurchasesForCounting || allPurchasesForCounting.length === 0) {
+      console.log('DEBUG: No purchases for counting, allPurchasesForCounting:', allPurchasesForCounting);
+      return countMap;
+    }
+    
+    console.log('DEBUG: Calculating purchase counts from', allPurchasesForCounting.length, 'total purchases');
+    
+    // Count ALL purchases for each user (regardless of status)
+    allPurchasesForCounting.forEach((purchase, index) => {
+      const userId = purchase.userId;
+      
+      if (!userId) {
+        console.warn('DEBUG: Purchase without userId at index', index, ':', purchase.id, purchase);
+        return;
+      }
+      
+      // Initialize if not exists
+      if (countMap[userId] === undefined) {
+        countMap[userId] = 0;
+      }
+      
+      // Increment count
+      countMap[userId] += 1;
+    });
+    
+    // Log detailed breakdown
+    console.log('DEBUG: Purchase count map result:', JSON.stringify(countMap, null, 2));
+    console.log('DEBUG: Total unique users with purchases:', Object.keys(countMap).length);
+    
+    // Log counts for each user
+    Object.entries(countMap).forEach(([uid, count]) => {
+      console.log(`DEBUG: User ${uid} has ${count} purchases`);
+    });
+    
+    return countMap;
+  }, [allPurchasesForCounting]);
 
   // Restore scroll position after loading more items
   useEffect(() => {
@@ -130,7 +213,8 @@ const UserList = () => {
   const summary = useMemo(() => {
     const totalUsers = users.length;
     const activeUsers = users.filter(u => u.isActive !== false).length;
-    const usersWithPurchases = users.filter(u => (u.totalPurchases || 0) > 0).length;
+    // Calculate users with purchases based on actual purchase counts from purchases collection
+    const usersWithPurchases = users.filter(u => (userPurchaseCountMap[u.id] || 0) > 0).length;
     
     // Calculate total revenue in selected currency
     const totalRevenue = Object.values(userSpendingMap).reduce((sum, spent) => sum + spent, 0);
@@ -141,7 +225,7 @@ const UserList = () => {
       usersWithPurchases,
       totalRevenue,
     };
-  }, [users, userSpendingMap]);
+  }, [users, userSpendingMap, userPurchaseCountMap]);
 
   if (loading) {
     return (
@@ -221,7 +305,7 @@ const UserList = () => {
           <div className="summary-card summary-card-highlight">
             <div className="summary-label">Total Revenue ({selectedCurrency})</div>
             <div className="summary-value">
-              {formatPrice(summary.totalRevenue, `${selectedCurrency} ${summary.totalRevenue.toFixed(2)}`)}
+              {formatAmountInCurrency(summary.totalRevenue, selectedCurrency)}
             </div>
           </div>
         </div>
@@ -287,19 +371,11 @@ const UserList = () => {
                   <p className="user-email">{user.email || 'N/A'}</p>
                   <div className="user-meta">
                     <span className="meta-item">
-                      <strong>Purchases:</strong> {user.totalPurchases || 0}
+                      <strong>Purchases:</strong> {loadingPurchases ? '...' : (userPurchaseCountMap[user.id] ?? 0)}
                     </span>
                     <span className="meta-item">
-                      <strong>Spent:</strong> {formatPrice(userSpendingMap[user.id] || 0, `${selectedCurrency} ${(userSpendingMap[user.id] || 0).toFixed(2)}`)}
+                      <strong>Spent:</strong> {formatAmountInCurrency(userSpendingMap[user.id] || 0, selectedCurrency)}
                     </span>
-                    <span className="meta-item">
-                      <strong>Joined:</strong> {formatDate(user.createdAt)}
-                    </span>
-                    {user.lastLogin && (
-                      <span className="meta-item">
-                        <strong>Last Login:</strong> {formatDate(user.lastLogin)}
-                      </span>
-                    )}
                   </div>
                 </div>
                 <div className="user-status">

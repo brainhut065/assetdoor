@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useIapProducts } from '../../hooks/useIapProducts';
 import { usePurchases } from '../../hooks/usePurchases';
 import Layout from '../../components/layout/Layout';
-import { formatPrice } from '../../utils/formatters';
+import { formatPrice, formatAmountInCurrency } from '../../utils/formatters';
 import { theme } from '../../styles/theme';
 import './Dashboard.css';
 
@@ -48,26 +48,40 @@ const Dashboard = () => {
   
   // Get price amount for a purchase in selected currency
   const getPurchasePriceAmount = (purchase) => {
+    // Always try to get price from IAP products first (never use product collection price)
     if (!purchase.iapProductId) {
-      return purchase.productPrice || 0;
+      // No IAP product ID - return 0 (FREE)
+      return 0;
     }
     
     const iapProduct = iapProductLookup[purchase.iapProductId];
-    if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices)) {
-      return purchase.productPrice || 0;
+    if (!iapProduct || !iapProduct.prices || !Array.isArray(iapProduct.prices) || iapProduct.prices.length === 0) {
+      // IAP product not found or has no prices - return 0 (FREE)
+      return 0;
     }
     
+    // Find price in selected currency (preferred)
     const priceObj = iapProduct.prices.find(p => p.currency === selectedCurrency);
-    if (priceObj && priceObj.amount) {
+    if (priceObj && priceObj.amount !== undefined && priceObj.amount !== null) {
       return priceObj.amount;
     }
     
-    // Fallback to first available price
-    if (iapProduct.prices.length > 0 && iapProduct.prices[0].amount) {
+    // If selected currency not available, try preferred order: INR, USD, EUR, then first available
+    const preferredCurrencies = ['INR', 'USD', 'EUR'];
+    for (const currency of preferredCurrencies) {
+      const preferredPrice = iapProduct.prices.find(p => p.currency === currency);
+      if (preferredPrice && preferredPrice.amount !== undefined && preferredPrice.amount !== null) {
+        return preferredPrice.amount;
+      }
+    }
+    
+    // Last resort: use first available price amount
+    if (iapProduct.prices.length > 0 && iapProduct.prices[0].amount !== undefined && iapProduct.prices[0].amount !== null) {
       return iapProduct.prices[0].amount;
     }
     
-    return purchase.productPrice || 0;
+    // Should never reach here, but return 0 (FREE)
+    return 0;
   };
   
   // Calculate revenue in selected currency
@@ -188,7 +202,7 @@ const Dashboard = () => {
             <div className="stat-card stat-card-highlight">
               <div className="stat-label">Total Revenue ({selectedCurrency})</div>
               <div className="stat-value">
-                {formatPrice(revenueInCurrency, `${selectedCurrency} ${revenueInCurrency.toFixed(2)}`)}
+                {formatAmountInCurrency(revenueInCurrency, selectedCurrency)}
               </div>
             </div>
           </div>

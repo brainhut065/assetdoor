@@ -9,12 +9,25 @@ import { theme } from '../../styles/theme';
 import './ProductList.css';
 
 const ProductList = () => {
-  const { products, loading, error, hasMore, loadMore, removeProduct } = useProducts();
-  const loadMoreButtonRef = useRef(null);
-  const scrollPositionRef = useRef(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+  const [selectedCurrency, setSelectedCurrency] = useState('INR'); // Default to INR
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  
   const { categories } = useCategories();
   const { iapProducts } = useIapProducts({ platform: 'All' });
   const navigate = useNavigate();
+  
+  // Pass category filter to useProducts hook
+  const filters = useMemo(() => ({
+    categoryId: selectedCategory !== 'All' ? selectedCategory : null,
+  }), [selectedCategory]);
+  
+  const { products, loading, error, hasMore, loadMore, removeProduct } = useProducts(filters);
+  const loadMoreButtonRef = useRef(null);
+  const scrollPositionRef = useRef(0);
+  const previousProductsLengthRef = useRef(0);
   
   // Create IAP lookup map by ID
   const iapLookup = useMemo(() => {
@@ -24,13 +37,6 @@ const ProductList = () => {
     });
     return lookup;
   }, [iapProducts]);
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
-  const [selectedCurrency, setSelectedCurrency] = useState('INR'); // Default to INR
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const previousProductsLengthRef = useRef(0);
 
   // Restore scroll position after loading more items
   useEffect(() => {
@@ -47,14 +53,12 @@ const ProductList = () => {
     previousProductsLengthRef.current = products.length;
   }, [loading, products.length]);
 
-  // Filter products
+  // Filter products (only search query now, category filtering is done at Firestore level)
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
 
-    // Filter by category
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(p => p.category === selectedCategory);
-    }
+    // Note: Category filtering is now done at Firestore query level via useProducts hook
+    // We only need to filter by search query here
 
     // Filter by search query
     if (searchQuery.trim()) {
@@ -66,7 +70,7 @@ const ProductList = () => {
     }
 
     return filtered;
-  }, [products, selectedCategory, searchQuery]);
+  }, [products, searchQuery]);
 
   const handleDelete = async (id, title) => {
     if (window.confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
@@ -212,7 +216,7 @@ const ProductList = () => {
             >
               <option value="All">All Categories</option>
               {categories.map(cat => (
-                <option key={cat.id} value={cat.name}>{cat.name}</option>
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
 

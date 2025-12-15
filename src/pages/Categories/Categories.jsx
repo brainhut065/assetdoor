@@ -124,8 +124,8 @@ const Categories = () => {
   };
 
   const handleDelete = async (category) => {
-    // Count products in this category
-    const productCount = products.filter(p => p.category === category.name).length;
+    // Count products in this category using categoryId
+    const productCount = products.filter(p => p.categoryId === category.id).length;
 
     if (productCount > 0) {
       alert(`Cannot delete category "${category.name}" because it has ${productCount} product(s). Please remove or reassign products first.`);
@@ -141,8 +141,8 @@ const Categories = () => {
     }
   };
 
-  const getProductCount = (categoryName) => {
-    return products.filter(p => p.category === categoryName).length;
+  const getProductCount = (categoryId) => {
+    return products.filter(p => p.categoryId === categoryId).length;
   };
 
   if (loading) {
@@ -268,7 +268,7 @@ const Categories = () => {
                     )}
                     <div className="category-meta">
                       <span className="product-count">
-                        {getProductCount(category.name)} product(s)
+                        {getProductCount(category.id)} product(s)
                       </span>
                       <span className={`status-badge ${category.isActive ? 'active' : 'inactive'}`}>
                         {category.isActive ? 'Active' : 'Inactive'}
