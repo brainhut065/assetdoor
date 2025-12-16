@@ -1,19 +1,32 @@
 // Categories Management Page
 import { useState, useEffect, useRef } from 'react';
 import { useCategories } from '../../hooks/useCategories';
-import { useProducts } from '../../hooks/useProducts';
+import { getAllProductsForCounting } from '../../services/firebase/firestore';
 import Layout from '../../components/layout/Layout';
 import { theme } from '../../styles/theme';
 import './Categories.css';
 
 const Categories = () => {
   const { categories, loading, error, hasMore, loadMore, addCategory, editCategory, removeCategory } = useCategories();
-  const { products } = useProducts();
+  const [allProductsForCounting, setAllProductsForCounting] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const loadMoreButtonRef = useRef(null);
   const scrollPositionRef = useRef(0);
   const previousCategoriesLengthRef = useRef(0);
+
+  // Fetch all products for accurate counting
+  useEffect(() => {
+    const fetchAllProducts = async () => {
+      try {
+        const allProducts = await getAllProductsForCounting();
+        setAllProductsForCounting(allProducts);
+      } catch (err) {
+        console.error('Error fetching all products for counting:', err);
+      }
+    };
+    fetchAllProducts();
+  }, []);
 
   // Restore scroll position after loading more items
   useEffect(() => {
@@ -124,8 +137,8 @@ const Categories = () => {
   };
 
   const handleDelete = async (category) => {
-    // Count products in this category using categoryId
-    const productCount = products.filter(p => p.categoryId === category.id).length;
+    // Count products in this category using categoryId from all products
+    const productCount = allProductsForCounting.filter(p => p.categoryId === category.id).length;
 
     if (productCount > 0) {
       alert(`Cannot delete category "${category.name}" because it has ${productCount} product(s). Please remove or reassign products first.`);
@@ -135,6 +148,9 @@ const Categories = () => {
     if (window.confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
       try {
         await removeCategory(category.id);
+        // Refresh product counts after deletion
+        const allProducts = await getAllProductsForCounting();
+        setAllProductsForCounting(allProducts);
       } catch (err) {
         alert('Failed to delete category: ' + err.message);
       }
@@ -142,7 +158,19 @@ const Categories = () => {
   };
 
   const getProductCount = (categoryId) => {
-    return products.filter(p => p.categoryId === categoryId).length;
+    // Count from all products, not just paginated ones
+    // Also handle legacy products that might only have category name
+    return allProductsForCounting.filter(p => {
+      if (p.categoryId === categoryId) {
+        return true;
+      }
+      // Fallback for old products without categoryId
+      if (!p.categoryId && p.category) {
+        const category = categories.find(cat => cat.id === categoryId);
+        return category && p.category === category.name;
+      }
+      return false;
+    }).length;
   };
 
   if (loading) {

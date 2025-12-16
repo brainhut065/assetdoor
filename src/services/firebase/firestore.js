@@ -251,6 +251,26 @@ export const getProducts = async (pagination = {}, filters = {}) => {
   }
 };
 
+/**
+ * Get all products without pagination - for counting purposes
+ * @returns {Promise<Array>} Array of all products
+ */
+export const getAllProductsForCounting = async () => {
+  try {
+    let q = query(collection(db, 'products'));
+    // Order by createdAt for consistency
+    q = query(q, orderBy('createdAt', 'desc'));
+    
+    const snapshot = await getDocs(q);
+    const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    return products;
+  } catch (error) {
+    console.error('Error fetching all products for counting:', error);
+    throw error;
+  }
+};
+
 export const getProduct = async (id) => {
   try {
     const docRef = doc(db, 'products', id);
