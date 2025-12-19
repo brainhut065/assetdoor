@@ -7,6 +7,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  setDoc,
   query,
   where,
   orderBy,
@@ -1068,6 +1069,184 @@ export const getDashboardStats = async () => {
       totalRevenue,
     };
   } catch (error) {
+    throw error;
+  }
+};
+
+// ========== LEGAL PAGES ==========
+
+/**
+ * Get legal pages document
+ * @returns {Promise<object|null>} Legal pages data or null if not found
+ */
+export const getLegalPages = async () => {
+  try {
+    const docRef = doc(db, 'settings', 'legalPages');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    }
+    // Return default structure if document doesn't exist
+    return {
+      id: 'legalPages',
+      termsAndConditions: {
+        content: '',
+        lastUpdated: null,
+      },
+      privacyPolicy: {
+        content: '',
+        lastUpdated: null,
+      },
+      safetyPolicy: {
+        content: '',
+        lastUpdated: null,
+      },
+    };
+  } catch (error) {
+    console.error('Error getting legal pages:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update legal pages document
+ * @param {object} legalPagesData - Legal pages data to update
+ * @returns {Promise<void>}
+ */
+export const updateLegalPages = async (legalPagesData) => {
+  try {
+    const docRef = doc(db, 'settings', 'legalPages');
+    const updateData = {
+      ...legalPagesData,
+      updatedAt: Timestamp.now(),
+    };
+    
+    // Check if document exists
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      await updateDoc(docRef, updateData);
+    } else {
+      // Create document if it doesn't exist
+      await setDoc(docRef, {
+        ...updateData,
+        createdAt: Timestamp.now(),
+      });
+    }
+  } catch (error) {
+    console.error('Error updating legal pages:', error);
+    throw error;
+  }
+};
+
+// ========== CONTACT DETAILS ==========
+
+/**
+ * Get contact details document
+ * @returns {Promise<object|null>} Contact details data or null if not found
+ */
+export const getContactDetails = async () => {
+  try {
+    const docRef = doc(db, 'settings', 'contactDetails');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    }
+    // Return default structure if document doesn't exist
+    return {
+      id: 'contactDetails',
+      email: '',
+      phone: '',
+    };
+  } catch (error) {
+    console.error('Error getting contact details:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update contact details document
+ * @param {object} contactData - Contact details data to update
+ * @returns {Promise<void>}
+ */
+export const updateContactDetails = async (contactData) => {
+  try {
+    const docRef = doc(db, 'settings', 'contactDetails');
+    const updateData = {
+      ...contactData,
+      updatedAt: Timestamp.now(),
+    };
+    
+    // Check if document exists
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      await updateDoc(docRef, updateData);
+    } else {
+      // Create document if it doesn't exist
+      await setDoc(docRef, {
+        ...updateData,
+        createdAt: Timestamp.now(),
+      });
+    }
+  } catch (error) {
+    console.error('Error updating contact details:', error);
+    throw error;
+  }
+};
+
+// ========== FAQS ==========
+
+/**
+ * Get FAQs document
+ * @returns {Promise<object|null>} FAQs data or null if not found
+ */
+export const getFAQs = async () => {
+  try {
+    const docRef = doc(db, 'settings', 'faqs');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        faqs: data.faqs || [],
+      };
+    }
+    // Return default structure if document doesn't exist
+    return {
+      id: 'faqs',
+      faqs: [],
+    };
+  } catch (error) {
+    console.error('Error getting FAQs:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update FAQs document
+ * @param {Array} faqs - Array of FAQ objects with question and answer
+ * @returns {Promise<void>}
+ */
+export const updateFAQs = async (faqs) => {
+  try {
+    const docRef = doc(db, 'settings', 'faqs');
+    const updateData = {
+      faqs: faqs,
+      updatedAt: Timestamp.now(),
+    };
+    
+    // Check if document exists
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      await updateDoc(docRef, updateData);
+    } else {
+      // Create document if it doesn't exist
+      await setDoc(docRef, {
+        ...updateData,
+        createdAt: Timestamp.now(),
+      });
+    }
+  } catch (error) {
+    console.error('Error updating FAQs:', error);
     throw error;
   }
 };

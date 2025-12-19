@@ -27,6 +27,7 @@ const Layout = ({ children, title, showBack = false, backPath = '/dashboard' }) 
     { path: '/iap-products', label: 'IAP Products' },
     { path: '/purchases', label: 'Purchases' },
     { path: '/users', label: 'Users' },
+    { path: '/settings', label: 'Settings' },
   ];
 
   const isActive = (path) => {

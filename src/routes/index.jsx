@@ -12,6 +12,13 @@ import PurchaseDetail from '../pages/Purchases/PurchaseDetail';
 import UserList from '../pages/Users/UserList';
 import UserDetail from '../pages/Users/UserDetail';
 import IapProductList from '../pages/IapProducts/IapProductList';
+import Settings from '../pages/Settings/Settings';
+import LegalPages from '../pages/Settings/LegalPages';
+import ContactDetails from '../pages/Settings/ContactDetails';
+import FAQs from '../pages/Settings/FAQs';
+import TermsPage from '../pages/Public/TermsPage';
+import PrivacyPage from '../pages/Public/PrivacyPage';
+import SafetyPage from '../pages/Public/SafetyPage';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -54,6 +61,11 @@ const PublicRoute = ({ children }) => {
   
   // Redirect to dashboard if already logged in
   return user ? <Navigate to="/dashboard" replace /> : children;
+};
+
+// Public route that doesn't require authentication and doesn't redirect
+const OpenPublicRoute = ({ children }) => {
+  return children;
 };
 
 const AppRoutes = () => {
@@ -146,6 +158,63 @@ const AppRoutes = () => {
             <PrivateRoute>
               <IapProductList />
             </PrivateRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <PrivateRoute>
+              <Settings />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/settings/legal-pages"
+          element={
+            <PrivateRoute>
+              <LegalPages />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/settings/contact-details"
+          element={
+            <PrivateRoute>
+              <ContactDetails />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/settings/faqs"
+          element={
+            <PrivateRoute>
+              <FAQs />
+            </PrivateRoute>
+          }
+        />
+        {/* Public routes for legal pages - accessible without authentication */}
+        <Route
+          path="/terms"
+          element={
+            <OpenPublicRoute>
+              <TermsPage />
+            </OpenPublicRoute>
+          }
+        />
+        <Route
+          path="/privacy"
+          element={
+            <OpenPublicRoute>
+              <PrivacyPage />
+            </OpenPublicRoute>
+          }
+        />
+        <Route
+          path="/safety"
+          element={
+            <OpenPublicRoute>
+              <SafetyPage />
+            </OpenPublicRoute>
           }
         />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

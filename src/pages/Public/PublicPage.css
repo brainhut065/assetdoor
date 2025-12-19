@@ -1,0 +1,174 @@
+.public-page {
+  min-height: 100vh;
+  background-color: #FFFEF7;
+  padding: 20px;
+}
+
+.public-page-container {
+  max-width: 900px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.public-page-header {
+  background: linear-gradient(135deg, #FFD700 0%, #FFEB3B 100%);
+  color: #1A1A1A;
+  padding: 40px;
+  text-align: center;
+}
+
+.public-page-header h1 {
+  margin: 0 0 10px 0;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.public-page-header .last-updated {
+  margin: 0;
+  opacity: 0.8;
+  font-size: 14px;
+  color: #4A4A4A;
+}
+
+.public-page-content {
+  padding: 40px;
+  min-height: 400px;
+}
+
+.public-page-content .loading,
+.public-page-content .error {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.public-page-content .error {
+  color: #c33;
+}
+
+.public-page-content .content {
+  line-height: 1.8;
+  color: #333;
+}
+
+.legal-content {
+  line-height: 1.8;
+}
+
+.legal-content h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin: 30px 0 20px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #FFD700;
+}
+
+.legal-content h1:first-child {
+  margin-top: 0;
+}
+
+.legal-content h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin: 30px 0 15px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #FFD700;
+}
+
+.legal-content h2:first-child {
+  margin-top: 0;
+}
+
+.legal-content h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin: 25px 0 12px 0;
+}
+
+.legal-content p {
+  margin: 15px 0;
+  font-size: 16px;
+  color: #4A4A4A;
+  line-height: 1.8;
+}
+
+.legal-content ul,
+.legal-content ol {
+  margin: 15px 0;
+  padding-left: 30px;
+}
+
+.legal-content li {
+  margin: 8px 0;
+  font-size: 16px;
+  color: #4A4A4A;
+  line-height: 1.8;
+}
+
+.legal-content strong,
+.legal-content b {
+  font-weight: 700;
+  color: #1A1A1A;
+}
+
+.legal-content em,
+.legal-content i {
+  font-style: italic;
+}
+
+.legal-content u {
+  text-decoration: underline;
+}
+
+.legal-content a {
+  color: #FFD700;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.legal-content a:hover {
+  text-decoration: underline;
+  color: #FFC107;
+}
+
+.public-page-footer {
+  background: #FFFEF7;
+  padding: 20px;
+  text-align: center;
+  color: #4A4A4A;
+  font-size: 14px;
+  border-top: 1px solid #E0E0E0;
+}
+
+@media (max-width: 768px) {
+  .public-page {
+    padding: 10px;
+  }
+
+  .public-page-header {
+    padding: 30px 20px;
+  }
+
+  .public-page-header h1 {
+    font-size: 28px;
+  }
+
+  .public-page-content {
+    padding: 20px;
+  }
+
+  .legal-content h2 {
+    font-size: 20px;
+  }
+
+  .legal-content p {
+    font-size: 14px;
+  }
+}
+
